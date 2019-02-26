@@ -19,50 +19,13 @@
 #include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/MuonSelections.h"
 #include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/TriggerSelections.h"
 
+// Custom
+#include "Decay.h"
+
 using namespace std;
 using namespace tas;
 
-struct System {
-    // Member Variables
-    int motherIdx;
-    int motherID;
-    int tag;
-    LorentzVector momenta;
-    // Overload Constructor
-    System(int, int);
-    // Destructor
-    ~System();
-    // Methods
-    void Add(int, LorentzVector);
-    double Mass();
-    string Tag();
-};
-
-System::System(int new_motherIdx, int new_motherID) {
-    motherIdx = new_motherIdx;
-    motherID = new_motherID;
-    tag = 0;
-}
-
-System::~System() {}
-
-void System::Add(int daughterID, LorentzVector new_p4) {
-    momenta += new_p4;
-    tag += daughterID;
-    return;
-}
-
-double System::Mass() {
-    return momenta.M();
-}
-
-string System::Tag() {
-    return to_string(motherID)+"_"+to_string(tag);
-}
-
-
-
-int SanityCheck(TChain* chain, char sample_name[], bool fast = true, int nEvents = -1, string skimFilePrefix = "test") {
+int SanityCheck(TChain* chain, char sample_name[], bool verbose = false, bool fast = true, int nEvents = -1, string skimFilePrefix = "test") {
 
     // Benchmark
     TBenchmark *bmark = new TBenchmark();
@@ -71,16 +34,21 @@ int SanityCheck(TChain* chain, char sample_name[], bool fast = true, int nEvents
     // Directory Setup
     TDirectory *rootdir = gDirectory->GetDirectory("Rint:");
 
+    vector<int> prods;
     // From Higgs
+    prods = {333, 22};
+    Decay* H_to_PhiGamma = new Decay(25, prods);
     TH1F* H_to_PhiGamma_mass = new TH1F("H_to_PhiGamma_mass", "", 100,120,130);
-    string H_to_PhiGamma_tag = to_string(25)+to_string(333+22);
+    prods = {113, 22};
+    Decay* H_to_RhoGamma = new Decay(25, prods);
     TH1F* H_to_RhoGamma_mass = new TH1F("H_to_RhoGamma_mass", "", 100,120,130);
-    string H_to_RhoGamma_tag = to_string(25)+to_string(113+22);
+    prods = {321, -321, 22};
+    Decay* H_to_RhoGamma = new Decay(25, prods);
     TH1F* H_to_KKGamma_mass = new TH1F("H_to_KKGamma_mass", "", 100,120,130);
-    string H_to_KKGamma_tag = to_string(25)+to_string(130+310+22);
     // From Phi
+    prods = {321, -321};
+    Decay* Phi_to_KK = new Decay(333, prods);
     TH1F* Phi_to_KK_mass = new TH1F("Phi_to_KK_mass", "", 100,0,2);
-    string H_to_KKGamma_tag = to_string(333)+to_string(130+310);
 
     // Loop over events to Analyze
     unsigned int nEventsTotal = 0;
@@ -103,6 +71,7 @@ int SanityCheck(TChain* chain, char sample_name[], bool fast = true, int nEvents
         // Loop over Events in current file
         if (nEventsTotal >= nEventsChain) continue;
         unsigned int nEventsTree = tree->GetEntriesFast();
+
         for (unsigned int event = 0; event < nEventsTree; ++event) {
 
             // Get Event Content
@@ -118,64 +87,60 @@ int SanityCheck(TChain* chain, char sample_name[], bool fast = true, int nEvents
 
             // Scale1fb
             double sf = 1.0;
-            bool verbose = false;
 
-            // Systems
-            vector<int> motherIdxs;
-            vector<System*> systems;
+            // Add new systems to decays
+            H_to_PhiGamma->NewSystem();
+            H_to_RhoGamma->NewSystem();
+            H_to_KKGamma->NewSystem();
+            Phi_to_KK->NewSystem();
 
-            // Loop over gen-level data
+            // START Loop over gen-level data ------------
             for (unsigned int i = 0; i < genps_id().size(); i++) {
                 // Get PDG ID of daugher, mother
                 int thisID = genps_id().at(i);
                 int thisMotherID = genps_id_mother().at(i);
                 // Reject uninteresting daughters/mothers
                 if (thisMotherID != 25 && thisMotherID != 333) continue;
-                if (thisID != 333 && thisID != 22 && thisID != 113 && thisID != 130 && thisID != 310) continue;
-                // Get index of mother
-                int thisMotherIdx = genps_idx_mother().at(i);
-                // Check if system already initialized
-                int masterIdx = -1;
-                auto iter = find(motherIdxs.begin(), motherIdxs.end(), thisMotherIdx);
-                if (iter == motherIdxs.end()) {
-                    System* newSystem = new System(thisMotherIdx, thisMotherID);
-                    systems.push_back(newSystem);
-                    motherIdxs.push_back(thisMotherIdx);
-                    masterIdx = (motherIdxs.size()-1);
+                if (thisID != 333 && thisID != 22 && thisID != 113 && thisID != 321 && thisID != -321) continue;
+                if (!genps_isLastCopy().at(i)) continue;
+                // Add particle to relevant systems
+                if (thisMotherID == 25) {
+                    if (thisID == 22 || thisID == 333) {
+                        H_to_PhiGamma->Add(thisID, genps_p4()[i]);
+                    }
+                    if (thisID == 22 || thisID == 113) {
+                        H_to_RhoGamma->Add(thisID, genps_p4()[i]);
+                    }
+                    if (thisID == 22 || thisID == 321 || thisID == -321) {
+                        H_to_KKGamma->Add(thisID, genps_p4()[i]);
+                    }
                 }
-                else {
-                    masterIdx = distance(motherIdxs.begin(), iter);
+                if (thisMotherID == 333) {
+                    if (thisID == 321 || thisID == -321) {
+                        Phi_to_KK->Add(thisID, genps_p4()[i]);
+                    }
                 }
-                // Get current system
-                System* curSystem = systems.at(masterIdx); 
-                // Add particle to system
-                curSystem->Add(thisID, genps_p4()[i]);
+
                 // Particle data printout
                 if (verbose) {
                     cout << "-------------- PARTICLE DATA --------------\n";
                     cout << "Particle: " << thisID << "\n";
-                    cout << "System: " << curSystem->motherID << "(PDG), " << curSystem->motherIdx << "(Index)\n";
-                    cout << "pt: " << curSystem->momenta << "\n";
-                    cout << "tag: " << curSystem->Tag() << "\n";
-                    cout << "mass: " << curSystem->Mass() << "\n";
                     cout << "-------------------------------------------\n";
                 }
-                // Get unique tag for system
-                string curTag = curSystem->Tag();
-                // Fill histogram if is system complete
-                if (curTag == H_to_PhiGamma_tag) {
-                    H_to_PhiGamma_mass->Fill(curSystem->Mass(), sf);
-                    delete curSystem;
-                }
-                else if (curTag == H_to_RhoGamma_tag) {
-                    H_to_RhoGamma_mass->Fill(curSystem->Mass(), sf);
-                    delete curSystem;
-                }
-                else if (curTag == Phi_to_KK_tag) {
-                    Phi_to_KK_mass->Fill(curSystem->Mass(), sf);
-                    delete curSystem;
-                }
-            }
+
+                if (H_to_PhiGamma->Full() && H_to_RhoGamma->Full() && H_to_KKGamma->Full() && Phi_to_KK->Full()) break;
+            } // END Loop over gen-level data ------------
+
+            // Retrieve systems filled in gen-level loop
+            System* H_to_PhiGamma_sys = H_to_PhiGamma->GetSystem();
+            System* H_to_RhoGamma_sys = H_to_RhoGamma->GetSystem();
+            System* H_to_KKGamma_sys = H_to_KKGamma->GetSystem();
+            System* Phi_to_KK_sys = Phi_to_KK->GetSystem();
+            // Fill Histograms
+            H_to_PhiGamma_mass->Fill(H_to_PhiGamma_sys->Mass(), sf);
+            H_to_RhoGamma_mass->Fill(H_to_RhoGamma_sys->Mass(), sf);
+            H_to_KKGamma_mass->Fill(H_to_KKGamma_sys->Mass(), sf);
+            Phi_to_KK_mass->Fill(Phi_to_KK_sys->Mass(), sf);
             
         }
   
