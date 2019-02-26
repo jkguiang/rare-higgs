@@ -32,7 +32,7 @@ System::~System() {}
 
 void System::Add(int new_daughterID, LorentzVector new_p4) {
     p4 += new_p4;
-    daugherIDs.push_back(new_daughterID);
+    daughterIDs.push_back(new_daughterID);
     return;
 }
 
@@ -43,7 +43,7 @@ double System::Mass() {
 string System::Tag() {
     string tag = to_string(motherID);
     for (unsigned int i = 0; i < daughterIDs.size(); i++) {
-        tag += to_string(daughter.at(i));
+        tag += to_string(daughterIDs.at(i));
     }
     return tag;
 }
@@ -70,7 +70,7 @@ struct Decay {
 
 Decay::Decay(int new_motherID, vector<int> new_daughterIDs) {
     motherID = new_motherID;
-    daugherIDs = new_daughterIDs;
+    daughterIDs = new_daughterIDs;
     tag = MakeTag();
 }
 
@@ -79,7 +79,7 @@ Decay::~Decay() {}
 string Decay::MakeTag() {
     int daughterSum = 0;
     for (unsigned int i = 0; i < daughterIDs.size(); i++) {
-        daughterSum += daughter.at(i);
+        daughterSum += daughterIDs.at(i);
     }
     return to_string(motherID)+to_string(daughterSum);
 }
