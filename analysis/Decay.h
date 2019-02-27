@@ -41,11 +41,12 @@ double System::Mass() {
 }
 
 string System::Tag() {
-    string tag = to_string(motherID);
+    if (daughterIDs.size() == 0) return to_string(motherID)+"EMPTY";
+    int daughterSum = 0;
     for (unsigned int i = 0; i < daughterIDs.size(); i++) {
-        tag += to_string(daughterIDs.at(i));
+        daughterSum += daughterIDs.at(i);
     }
-    return tag;
+    return to_string(motherID)+"_"+to_string(daughterSum);
 }
 
 struct Decay {
@@ -61,11 +62,12 @@ struct Decay {
     ~Decay();
     // Methods
     void NewSystem();
-    void Add(int, LorentzVector, int);
-    string MakeTag();
-    bool Full(int);
     vector<System*> GetSystems();
     System* GetSystem(int);
+    void Add(int, LorentzVector, int);
+    void Pop();
+    string MakeTag();
+    bool Full(int);
 };
 
 Decay::Decay(int new_motherID, vector<int> new_daughterIDs) {
@@ -77,33 +79,18 @@ Decay::Decay(int new_motherID, vector<int> new_daughterIDs) {
 Decay::~Decay() {}
 
 string Decay::MakeTag() {
+    if (daughterIDs.size() == 0) return to_string(motherID)+"EMPTY";
     int daughterSum = 0;
     for (unsigned int i = 0; i < daughterIDs.size(); i++) {
         daughterSum += daughterIDs.at(i);
     }
-    return to_string(motherID)+to_string(daughterSum);
+    return to_string(motherID)+"_"+to_string(daughterSum);
 }
 
 void Decay::NewSystem() {
     System* sys = new System(motherID);
     systems.push_back(sys);
     return;
-}
-
-void Decay::Add(int new_daughterID, LorentzVector new_p4, int index = -1) {
-    if (index == -1) {
-        index = systems.size()-1;
-    }
-    System* sys = systems.at(index);
-    sys->Add(new_daughterID, new_p4);
-    return;
-}
-
-bool Decay::Full(int index = -1) {
-    if (index == -1) {
-        index = systems.size()-1;
-    }
-    return (systems.at(index)->Tag() == tag);
 }
 
 vector<System*> Decay::GetSystems() {
@@ -115,4 +102,27 @@ System* Decay::GetSystem(int index = -1) {
         index = systems.size()-1;
     }
     return systems.at(index);
+}
+
+void Decay::Add(int new_daughterID, LorentzVector new_p4, int index = -1) {
+    if (index == -1) {
+        index = systems.size()-1;
+    }
+    System* sys = systems.at(index);
+    sys->Add(new_daughterID, new_p4);
+    return;
+}
+
+void Decay::Pop() {
+    System* sys = systems.at(systems.size()-1);
+    systems.pop_back();
+    delete sys;
+    return;
+}
+
+bool Decay::Full(int index = -1) {
+    if (index == -1) {
+        index = systems.size()-1;
+    }
+    return (systems.at(index)->Tag() == tag);
 }

@@ -34,21 +34,28 @@ int SanityCheck(TChain* chain, char sample_name[], bool verbose = false, bool fa
     // Directory Setup
     TDirectory *rootdir = gDirectory->GetDirectory("Rint:");
 
+    // Vector for communicating decay products to Decay object
     vector<int> prods;
-    // From Higgs
+    // Higgs to Phi, Gamma
     prods = {333, 22};
     Decay* H_to_PhiGamma = new Decay(25, prods);
     TH1F* H_to_PhiGamma_mass = new TH1F("H_to_PhiGamma_mass", "", 100,120,130);
+    H_to_PhiGamma_mass->SetDirectory(rootdir);
+    // Higgs to Rho, Gamma
     prods = {113, 22};
     Decay* H_to_RhoGamma = new Decay(25, prods);
     TH1F* H_to_RhoGamma_mass = new TH1F("H_to_RhoGamma_mass", "", 100,120,130);
+    H_to_RhoGamma_mass->SetDirectory(rootdir);
+    // Higgs to K+, K-, Gamma
     prods = {321, -321, 22};
-    Decay* H_to_RhoGamma = new Decay(25, prods);
+    Decay* H_to_KKGamma = new Decay(25, prods);
     TH1F* H_to_KKGamma_mass = new TH1F("H_to_KKGamma_mass", "", 100,120,130);
-    // From Phi
+    H_to_KKGamma_mass->SetDirectory(rootdir);
+    // Phi to K+, K-
     prods = {321, -321};
     Decay* Phi_to_KK = new Decay(333, prods);
     TH1F* Phi_to_KK_mass = new TH1F("Phi_to_KK_mass", "", 100,0,2);
+    Phi_to_KK_mass->SetDirectory(rootdir);
 
     // Loop over events to Analyze
     unsigned int nEventsTotal = 0;
@@ -71,7 +78,6 @@ int SanityCheck(TChain* chain, char sample_name[], bool verbose = false, bool fa
         // Loop over Events in current file
         if (nEventsTotal >= nEventsChain) continue;
         unsigned int nEventsTree = tree->GetEntriesFast();
-
         for (unsigned int event = 0; event < nEventsTree; ++event) {
 
             // Get Event Content
@@ -85,7 +91,7 @@ int SanityCheck(TChain* chain, char sample_name[], bool verbose = false, bool fa
 
             /* --> Analysis Code <-- */
 
-            // Scale1fb
+            // Scale Factor
             double sf = 1.0;
 
             // Add new systems to decays
@@ -111,13 +117,14 @@ int SanityCheck(TChain* chain, char sample_name[], bool verbose = false, bool fa
                     if (thisID == 22 || thisID == 113) {
                         H_to_RhoGamma->Add(thisID, genps_p4()[i]);
                     }
-                    if (thisID == 22 || thisID == 321 || thisID == -321) {
+                    if (thisID == 22) {
                         H_to_KKGamma->Add(thisID, genps_p4()[i]);
                     }
                 }
                 if (thisMotherID == 333) {
                     if (thisID == 321 || thisID == -321) {
                         Phi_to_KK->Add(thisID, genps_p4()[i]);
+                        H_to_KKGamma->Add(thisID, genps_p4()[i]);
                     }
                 }
 
@@ -128,19 +135,29 @@ int SanityCheck(TChain* chain, char sample_name[], bool verbose = false, bool fa
                     cout << "-------------------------------------------\n";
                 }
 
-                if (H_to_PhiGamma->Full() && H_to_RhoGamma->Full() && H_to_KKGamma->Full() && Phi_to_KK->Full()) break;
+                if ( (H_to_PhiGamma->Full() && H_to_KKGamma->Full() && Phi_to_KK->Full()) || H_to_RhoGamma->Full() ) break;
             } // END Loop over gen-level data ------------
 
-            // Retrieve systems filled in gen-level loop
-            System* H_to_PhiGamma_sys = H_to_PhiGamma->GetSystem();
-            System* H_to_RhoGamma_sys = H_to_RhoGamma->GetSystem();
-            System* H_to_KKGamma_sys = H_to_KKGamma->GetSystem();
-            System* Phi_to_KK_sys = Phi_to_KK->GetSystem();
-            // Fill Histograms
-            H_to_PhiGamma_mass->Fill(H_to_PhiGamma_sys->Mass(), sf);
-            H_to_RhoGamma_mass->Fill(H_to_RhoGamma_sys->Mass(), sf);
-            H_to_KKGamma_mass->Fill(H_to_KKGamma_sys->Mass(), sf);
-            Phi_to_KK_mass->Fill(Phi_to_KK_sys->Mass(), sf);
+            // Retrieve systems filled in gen-level loop, fill histograms
+            if (H_to_PhiGamma->Full()) {
+                System* H_to_PhiGamma_sys = H_to_PhiGamma->GetSystem();
+                H_to_PhiGamma_mass->Fill(H_to_PhiGamma_sys->Mass(), sf);
+            } else H_to_PhiGamma->Pop();
+
+            if (H_to_RhoGamma->Full()) {
+                System* H_to_RhoGamma_sys = H_to_RhoGamma->GetSystem();
+                H_to_RhoGamma_mass->Fill(H_to_RhoGamma_sys->Mass(), sf);
+            } else H_to_RhoGamma->Pop();
+
+            if (H_to_KKGamma->Full()) {
+                System* H_to_KKGamma_sys = H_to_KKGamma->GetSystem();
+                H_to_KKGamma_mass->Fill(H_to_KKGamma_sys->Mass(), sf);
+            } else H_to_KKGamma->Pop();
+
+            if (Phi_to_KK->Full()) {
+                System* Phi_to_KK_sys = Phi_to_KK->GetSystem();
+                Phi_to_KK_mass->Fill(Phi_to_KK_sys->Mass(), sf);
+            } else Phi_to_KK->Pop();
             
         }
   
