@@ -1,8 +1,33 @@
+// C++
+#include <iostream>
+#include <vector>
+
+// ROOT
+#include "TBenchmark.h"
+#include "TChain.h"
+#include "TDirectory.h"
+#include "TFile.h"
+#include "TROOT.h"
+#include "TTreeCache.h"
+#include "TString.h"
+
+// CMS3
+#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/CMS3.h"
+#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/ElectronSelections.h"
+#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/MuonSelections.h"
+#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/IsolationTools.h"
+#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/TriggerSelections.h"
+
+// Header
 #include "mcTree.h"
 
+using namespace std;
+using namespace tas;
+
 mcTree::mcTree() {
-    /* --> Gen TTree Setup <-- */
-    t = new TTree("gtree", "gtree");
+    /* --> TTree Setup <-- */
+    t = new TTree("tree", "tree");
+    /* --> Gen Branches Setup <-- */
     b_genW_pt = t->Branch("genW_pt", &genW_pt, "genW_pt/F");
     b_genW_eta = t->Branch("genW_eta", &genW_eta, "genW_eta/F");
     b_genW_phi = t->Branch("genW_phi", &genW_phi, "genW_phi/F");
@@ -31,8 +56,7 @@ mcTree::mcTree() {
     b_genKp_phi = t->Branch("genKp_phi", &genKp_phi, "genKp_phi/F");
     b_genKp_eta = t->Branch("genKp_eta", &genKp_eta, "genKp_eta/F");
     b_genKpKm_dR = t->Branch("genKpKm_dR", &genKpKm_dR, "genKpKm_dR/F");
-    /* --> Reco TTree Setup <-- */
-    t = new TTree("rtree", "rtree");
+    /* --> Reco Branches Setup <-- */
     b_recoPhi_mass = t->Branch("recoPhi_mass", &recoPhi_mass, "recoPhi_mass/F");
     b_recoKm_pt = t->Branch("recoKm_pt", &recoKm_pt, "recoKm_pt/F");
     b_recoKm_phi = t->Branch("recoKm_phi", &recoKm_phi, "recoKm_phi/F");
@@ -217,7 +241,7 @@ void mcTree::FillGenBranches() {
 
     // Decay mode tracking information
     enum modes { H_to_PhiGamma = 0, H_to_RhoGamma = 1, H_to_KKGamma = 2, Phi_to_KK = 3, W_to_ElNu = 4, W_to_MuNu = 5 };
-    int mothers[6] = [-1,-1,-1,-1,-1,-1];
+    int mothers[6] = { 0,0,0,0,0,0 };
     vector<int> daughters[6];
 
     // START Loop over gen-level data ------------
@@ -247,32 +271,32 @@ void mcTree::FillGenBranches() {
         // Add particle id, idx, p4 to relevant systems
         if (thisMotherID == 24 || thisMotherID == -24) {
             if (thisID == -11 || thisID == 11) {
-                mothers[W_to_ElNu] = genps_idx_mother().at(i);
+                mothers[W_to_ElNu] = thisMotherIdx;
                 daughters[W_to_ElNu].push_back(i);
             }
             if (thisID == -13 || thisID == 13) {
-                mothers[W_to_MuNu] = genps_idx_mother().at(i);
+                mothers[W_to_MuNu] = thisMotherIdx;
                 daughters[W_to_MuNu].push_back(i);
             }
         }
         if (thisMotherID == 25) {
             if (thisID == 22 || thisID == 333) {
-                mothers[H_to_PhiGamma] = genps_idx_mother().at(i);
+                mothers[H_to_PhiGamma] = thisMotherIdx;
                 daughters[H_to_PhiGamma].push_back(i);
             }
             if (thisID == 22 || thisID == 113) {
-                mothers[H_to_PhiGamma] = genps_idx_mother().at(i);
-                daughters[H_to_PhiGamma].push_back(i);
+                mothers[H_to_RhoGamma] = thisMotherIdx;
+                daughters[H_to_RhoGamma].push_back(i);
             }
             if (thisID == 22) {
-                mothers[H_to_KKGamma] = genps_idx_mother().at(i);
+                mothers[H_to_KKGamma] = thisMotherIdx;
                 daughters[H_to_KKGamma].push_back(i);
             }
         }
         if (thisMotherID == 333) {
-            if ((thisID == 321 || thisID == -321) && genps_id_mother()[genps_idx_mother().at(i)] == 25) {
+            if ((thisID == 321 || thisID == -321) && genps_id_mother()[thisMotherIdx] == 25) {
                 // Fill Phi->KK Mother/Daughters
-                mothers[Phi_to_KK] = genps_idx_mother().at(i);
+                mothers[Phi_to_KK] = thisMotherIdx;
                 daughters[Phi_to_KK].push_back(i);
                 // Fill H->KK,Gamma Daughters
                 daughters[H_to_KKGamma].push_back(i);
@@ -284,8 +308,8 @@ void mcTree::FillGenBranches() {
     LorentzVector p4_sum;
     int decay;
     // Retrieve products filled in gen-level loop, fill tree branches
-    if (daughters[W_to_MuNu].size() == 2 || daughters[W_to_ElNu].size() == 2) {
-        decay = (daughters[W_to_MuNu].size() == 2) ? W_to_MuNu : W_to_ElNu;
+    if (daughters[W_to_MuNu].size() == 1 || daughters[W_to_ElNu].size() == 1) {
+        decay = (daughters[W_to_MuNu].size() == 1) ? W_to_MuNu : W_to_ElNu;
         p4_sum -= p4_sum;
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
             // Get daughter index
