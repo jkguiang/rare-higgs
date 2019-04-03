@@ -1,0 +1,123 @@
+#ifndef MCTREE_H
+#define MCTREE_H
+
+class mcTree {
+
+    /* --> Gen TTree Branches <-- */
+    // W Boson
+    TBranch* b_genW_pt;
+    TBranch* b_genW_eta;
+    TBranch* b_genW_phi;
+    TBranch* b_genW_mass;
+    // Lepton from W Boson
+    TBranch* b_genWLepton_id;
+    TBranch* b_genWLepton_pt;
+    TBranch* b_genWLepton_eta;
+    TBranch* b_genWLepton_phi;
+    // Higgs Boson
+    TBranch* b_genHiggs_pt;
+    TBranch* b_genHiggs_eta;
+    TBranch* b_genHiggs_phi;
+    TBranch* b_genHiggs_mass;
+    // Mesons from Higgs
+    TBranch* b_genHiggsMeson_id;
+    TBranch* b_genHiggsMeson_pt;
+    TBranch* b_genHiggsMeson_eta;
+    TBranch* b_genHiggsMeson_phi;
+    TBranch* b_genHiggsMeson_mass;
+    TBranch* b_genHiggsMesonGamma_dR;
+    // Gamma from Higgs
+    TBranch* b_genGamma_pt;
+    TBranch* b_genGamma_phi;
+    TBranch* b_genGamma_eta;
+    // K- from Phi
+    TBranch* b_genKm_pt;
+    TBranch* b_genKm_phi;
+    TBranch* b_genKm_eta;
+    // K+ from Phi
+    TBranch* b_genKp_pt;
+    TBranch* b_genKp_phi;
+    TBranch* b_genKp_eta;
+    // dR between Kaons
+    TBranch* b_genKpKm_dR;
+
+    /* --> Reco TTree Branches <-- */
+    // Reconstructed Phi
+    TBranch* b_recoPhi_mass;
+    // K- from Phi
+    TBranch* b_recoKm_pt;
+    TBranch* b_recoKm_phi;
+    TBranch* b_recoKm_eta;
+    // K+ from Phi
+    TBranch* b_recoKp_pt;
+    TBranch* b_recoKp_phi;
+    TBranch* b_recoKp_eta;
+    // dR between Kaons
+    TBranch* b_recoKpKm_dR;
+
+    public:
+        // TTree
+        TTree* t;
+        /* --> Gen TTree Branch Values <-- */
+        // W Boson
+        float genW_pt;
+        float genW_eta;
+        float genW_phi;                                                             
+        float genW_mass;
+        // Lepton from W Boson
+        float genWLepton_id;
+        float genWLepton_pt;
+        float genWLepton_eta;
+        float genWLepton_phi;                                                             
+        // Higgs Boson
+        float genHiggs_pt;
+        float genHiggs_eta;
+        float genHiggs_phi;                                                             
+        float genHiggs_mass;
+        // Mesons from Higgs
+        float genHiggsMeson_id;
+        float genHiggsMeson_pt;
+        float genHiggsMeson_eta;
+        float genHiggsMeson_phi;
+        float genHiggsMeson_mass;
+        float genHiggsMesonGamma_dR;
+        // Gamma from Higgs
+        float genGamma_pt;
+        float genGamma_phi;
+        float genGamma_eta;
+        // K- from Phi
+        float genKm_pt;
+        float genKm_phi;
+        float genKm_eta;
+        // K+ from Phi
+        float genKp_pt;
+        float genKp_phi;
+        float genKp_eta;
+        // dR between Kaons
+        float genKpKm_dR;
+
+        /* --> Reco TTree Branch Values <-- */
+        // Reconstructed Phi
+        float recoPhi_mass;
+        // K- from Phi
+        float recoKm_pt;
+        float recoKm_phi;
+        float recoKm_eta;
+        // K+ from Phi
+        float recoKp_pt;
+        float recoKp_phi;
+        float recoKp_eta;
+        // dR between Kaons
+        float recoKpKm_dR;
+
+        /* --> Methods <-- */
+        // Constructor
+        mcTree();
+        // Reset Vars
+        void Reset();
+        double dR(float, float, float, float);
+        void FillRecoBranches();
+        void FillGenBranches();
+};
+
+#endif
