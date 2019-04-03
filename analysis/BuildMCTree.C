@@ -33,7 +33,7 @@ int BuildMCTree(TChain* chain, TString sample_name, bool verbose = false, bool f
     bmark->Start("benchmark");
 
     // Iniitialize TFile
-    TFile* f = new TFile(sample_name, "UPDATE");
+    TFile* f = new TFile(sample_name, "RECREATE");
 
     // Get Tree
     mcTree* mct = new mcTree();
