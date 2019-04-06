@@ -15,6 +15,7 @@
 #include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/CMS3.h"
 #include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/ElectronSelections.h"
 #include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/MuonSelections.h"
+#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/PhotonSelections.h"
 #include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/IsolationTools.h"
 #include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/TriggerSelections.h"
 
@@ -27,6 +28,10 @@ using namespace tas;
 mcTree::mcTree() {
     /* --> TTree Setup <-- */
     t = new TTree("tree", "tree");
+    /* --> Meta Branches Setup <-- */
+    b_run = t->Branch("run", &run, "run/I");
+    b_lumi = t->Branch("lumi", &lumi, "lumi/I");
+    b_event = t->Branch("event", &event, "event/I");
     /* --> Gen Branches Setup <-- */
     b_genW_pt = t->Branch("genW_pt", &genW_pt, "genW_pt/F");
     b_genW_eta = t->Branch("genW_eta", &genW_eta, "genW_eta/F");
@@ -57,7 +62,9 @@ mcTree::mcTree() {
     b_genKp_eta = t->Branch("genKp_eta", &genKp_eta, "genKp_eta/F");
     b_genKpKm_dR = t->Branch("genKpKm_dR", &genKpKm_dR, "genKpKm_dR/F");
     /* --> Reco Branches Setup <-- */
+    b_recoHiggs_mass = t->Branch("recoHiggs_mass", &recoHiggs_mass, "recoHiggs_mass/F");
     b_recoPhi_mass = t->Branch("recoPhi_mass", &recoPhi_mass, "recoPhi_mass/F");
+    b_recoPhi_iso = t->Branch("recoPhi_iso", &recoPhi_iso, "recoPhi_iso/F");
     b_recoKm_pt = t->Branch("recoKm_pt", &recoKm_pt, "recoKm_pt/F");
     b_recoKm_phi = t->Branch("recoKm_phi", &recoKm_phi, "recoKm_phi/F");
     b_recoKm_eta = t->Branch("recoKm_eta", &recoKm_eta, "recoKm_eta/F");
@@ -65,47 +72,80 @@ mcTree::mcTree() {
     b_recoKp_phi = t->Branch("recoKp_phi", &recoKp_phi, "recoKp_phi/F");
     b_recoKp_eta = t->Branch("recoKp_eta", &recoKp_eta, "recoKp_eta/F");
     b_recoKpKm_dR = t->Branch("recoKpKm_dR", &recoKpKm_dR, "recoKpKm_dR/F");
+    b_recoRho_mass = t->Branch("recoRho_mass", &recoRho_mass, "recoRho_mass/F");
+    b_recoRho_iso = t->Branch("recoRho_iso", &recoRho_iso, "recoRho_iso/F");
+    b_recoPim_pt = t->Branch("recoPim_pt", &recoPim_pt, "recoPim_pt/F");
+    b_recoPim_phi = t->Branch("recoPim_phi", &recoPim_phi, "recoPim_phi/F");
+    b_recoPim_eta = t->Branch("recoPim_eta", &recoPim_eta, "recoPim_eta/F");
+    b_recoPip_pt = t->Branch("recoPip_pt", &recoPip_pt, "recoPip_pt/F");
+    b_recoPip_phi = t->Branch("recoPip_phi", &recoPip_phi, "recoPip_phi/F");
+    b_recoPip_eta = t->Branch("recoPip_eta", &recoPip_eta, "recoPip_eta/F");
+    b_recoPipPim_dR = t->Branch("recoPipPim_dR", &recoPipPim_dR, "recoPipPim_dR/F");
+    b_recoGamma_pt = t->Branch("recoGamma_pt", &recoGamma_pt, "recoGamma_pt/F");
+    b_recoGamma_phi = t->Branch("recoGamma_phi", &recoGamma_phi, "recoGamma_phi/F");
+    b_recoGamma_eta = t->Branch("recoGamma_eta", &recoGamma_eta, "recoGamma_eta/F");
+    b_recoGamma_iso = t->Branch("recoGamma_iso", &recoGamma_iso, "recoGamma_iso/F");
 }
 
 void mcTree::Reset() {
+    // Meta
+    run = -1;
+    lumi = -1;
+    event = -1;
     // Gen
-    genW_pt = 0.0;
-    genW_eta = 0.0;
-    genW_phi = 0.0;
-    genW_mass = 0.0;
-    genWLepton_id = 0.0;
-    genWLepton_pt = 0.0;
-    genWLepton_eta = 0.0;
-    genWLepton_phi = 0.0;
-    genHiggs_pt = 0.0;
-    genHiggs_eta = 0.0;
-    genHiggs_phi = 0.0;
-    genHiggs_mass = 0.0;
-    genHiggsMeson_id = 0.0;
-    genHiggsMeson_pt = 0.0;
-    genHiggsMeson_eta = 0.0;
-    genHiggsMeson_phi = 0.0;
-    genHiggsMeson_mass = 0.0;
-    genHiggsMesonGamma_dR = 0.0;
-    genGamma_pt = 0.0;
-    genGamma_phi = 0.0;
-    genGamma_eta = 0.0;
-    genKm_pt = 0.0;
-    genKm_phi = 0.0;
-    genKm_eta = 0.0;
-    genKp_pt = 0.0;
-    genKp_phi = 0.0;
-    genKp_eta = 0.0;
-    genKpKm_dR = 0.0;
+    genW_pt = -999;
+    genW_eta = -999;
+    genW_phi = -999;
+    genW_mass = -999;
+    genWLepton_id = -999;
+    genWLepton_pt = -999;
+    genWLepton_eta = -999;
+    genWLepton_phi = -999;
+    genHiggs_pt = -999;
+    genHiggs_eta = -999;
+    genHiggs_phi = -999;
+    genHiggs_mass = -999;
+    genHiggsMeson_id = -999;
+    genHiggsMeson_pt = -999;
+    genHiggsMeson_eta = -999;
+    genHiggsMeson_phi = -999;
+    genHiggsMeson_mass = -999;
+    genHiggsMesonGamma_dR = -999;
+    genGamma_pt = -999;
+    genGamma_phi = -999;
+    genGamma_eta = -999;
+    genKm_pt = -999;
+    genKm_phi = -999;
+    genKm_eta = -999;
+    genKp_pt = -999;
+    genKp_phi = -999;
+    genKp_eta = -999;
+    genKpKm_dR = -999;
     // Reco
-    recoPhi_mass = 0.0;
-    recoKm_pt = 0.0;
-    recoKm_phi = 0.0;
-    recoKm_eta = 0.0;
-    recoKp_pt = 0.0;
-    recoKp_phi = 0.0;
-    recoKp_eta = 0.0;
-    recoKpKm_dR = 0.0;
+    recoHiggs_mass = -999;
+    recoPhi_mass = -999;
+    recoPhi_iso = -999;
+    recoKm_pt = -999;
+    recoKm_phi = -999;
+    recoKm_eta = -999;
+    recoKp_pt = -999;
+    recoKp_phi = -999;
+    recoKp_eta = -999;
+    recoKpKm_dR = -999;
+    recoRho_mass = -999;
+    recoRho_iso = -999;
+    recoPim_pt = -999; 
+    recoPim_phi = -999;
+    recoPim_eta = -999;
+    recoPip_pt = -999;
+    recoPip_phi = -999;
+    recoPip_eta = -999;
+    recoPipPim_dR = -999;
+    recoGamma_pt = -999;
+    recoGamma_phi = -999;
+    recoGamma_eta = -999;
+    recoGamma_iso = -999;
+
     return;
 }
 
@@ -124,67 +164,86 @@ void mcTree::FillRecoBranches() {
 
     /* --> PF Candidates <-- */
     // Store K+, K- indexes
-    vector<int> KpIdxs;
-    vector<int> KmIdxs;
+    vector<int> posHadronIdxs;
+    vector<int> negHadronIdxs;
     // START Loop over pfcands -----------------------------
     for (unsigned int i = 0; i < pfcands_p4().size(); i++) {
         // Find Kaons
         int thisID = pfcands_particleId().at(i);
-        if (abs(thisID) == 211) {
-            if (thisID > 0) KpIdxs.push_back(i);
-            else if (thisID < 0) KmIdxs.push_back(i);
-        }
+        if (thisID == 211) posHadronIdxs.push_back(i);
+        else if (thisID == -211) negHadronIdxs.push_back(i);
     } // END Loop over pfcands -----------------------------
 
+    // Find Phi candidates
+    vector<float> mesonCandsFromK_mass;
+    vector<float> mesonCandsFromPi_mass;
+    vector<int> mesonCands_posHadronIdx;
+    vector<int> mesonCands_negHadronIdx;
     // START Loop over K+ mesons ---------------------------
-    vector<float> phiCands_mass;
-    vector<int> phiCands_KpIdx;
-    vector<int> phiCands_KmIdx;
-    for (unsigned int i = 0; i < KpIdxs.size(); i++) {
-        int Kp_i = KpIdxs.at(i);
-        float Kp_pt = pfcands_p4()[Kp_i].pt();
+    for (unsigned int i = 0; i < posHadronIdxs.size(); i++) {
+        int posHadron_i = posHadronIdxs.at(i);
+        float posHadron_pt = pfcands_p4()[posHadron_i].pt();
         // Only consider high-pt K+ mesons
-        if (Kp_pt < 10) continue;
+        if (posHadron_pt < 10) continue;
         // START Loop over K- mesons -----------------------
-        for (unsigned int j = 0; j < KmIdxs.size(); j++) {
-            int Km_j = KmIdxs.at(j);
-            float Km_pt = pfcands_p4()[Km_j].pt();
+        for (unsigned int j = 0; j < negHadronIdxs.size(); j++) {
+            int negHadron_i = negHadronIdxs.at(j);
+            float negHadron_pt = pfcands_p4()[negHadron_i].pt();
             // Only consider high-pt K- mesons
-            if (Km_pt < 10) continue;
+            if (negHadron_pt < 10) continue;
             // Get Kaon pair p4
-            LorentzVector Kp_p4 = pfcands_p4()[Kp_i];
-            LorentzVector Km_p4 = pfcands_p4()[Km_j];
+            LorentzVector posHadron_p4 = pfcands_p4()[posHadron_i];
+            LorentzVector negHadron_p4 = pfcands_p4()[negHadron_i];
             // Get Kaon pair eta, phi
-            float Kp_phi = Kp_p4.phi();
-            float Km_phi = Km_p4.phi();
-            float Kp_eta = Kp_p4.eta();
-            float Km_eta = Km_p4.eta();
+            float posHadron_phi = posHadron_p4.phi();
+            float negHadron_phi = negHadron_p4.phi();
+            float posHadron_eta = posHadron_p4.eta();
+            float negHadron_eta = negHadron_p4.eta();
+            // Ignore large eta
+            if (abs(posHadron_eta) > 2.4 || abs(negHadron_eta) > 2.4) continue;
             // Get dR between kaons
-            float KpKm_dR = dR(Kp_phi, Km_phi, Kp_eta, Km_eta);
-            if (KpKm_dR < 0.1) {
-                float KpKm_mass = (Kp_p4 + Km_p4).M();    
-                phiCands_mass.push_back(KpKm_mass);
-                phiCands_KpIdx.push_back(Kp_i);
-                phiCands_KmIdx.push_back(Km_j);
+            float PosnegHadron_dR = dR(posHadron_phi, negHadron_phi, posHadron_eta, negHadron_eta);
+            if (PosnegHadron_dR < 0.1) {
+                // Pi hypothesis
+                float mesonFromPi_mass = (posHadron_p4 + negHadron_p4).M();    
+                // K hypothesis
+                posHadron_p4.SetE(pow(posHadron_p4.P2()+pow(.493677,2), 0.5)); // Assumed by tracker to be a
+                negHadron_p4.SetE(pow(negHadron_p4.P2()+pow(.493677,2), 0.5)); // Pi, so must manually set E 
+                float mesonFromK_mass = (posHadron_p4 + negHadron_p4).M();    
+                // Fill meson candidate vectors
+                mesonCandsFromK_mass.push_back(mesonFromK_mass);
+                mesonCandsFromPi_mass.push_back(mesonFromPi_mass);
+                mesonCands_posHadronIdx.push_back(posHadron_i);
+                mesonCands_negHadronIdx.push_back(negHadron_i);
             }
         } // END Loop over K- mesons -----------------------
     } // END Loop over K+ mesons ---------------------------
 
-    // Find best Phi Candidate
-    int bestPhiCand = 0;
+    // Find best Phi, Rho candidates
+    int bestPhiCand = -1;
+    int bestRhoCand = -1;
     float bestPhiMassDiff = 10.0;
+    float bestRhoMassDiff = 10.0;
     float phiMass = 1.019;
-    if (phiCands_KpIdx.size() > 0) {
-        // START Loop over Phi Candidates ----------------------
-        for (unsigned int i = 0; i < phiCands_KpIdx.size(); i++) {
-            if (i%3 == 0) {
-                float thisDiff = abs(phiMass - phiCands_mass.at(i));
-                if (thisDiff < bestPhiMassDiff) {
-                    bestPhiMassDiff = thisDiff;
-                    bestPhiCand = i;
-                }
+    float rhoMass = 0.775;
+    // Check if any meson candidates found
+    if (mesonCands_posHadronIdx.size() > 0) {
+        // START Loop over meson cands from K --------------
+        for (unsigned int i = 0; i < mesonCandsFromK_mass.size(); i++) {
+            float thisDiff = abs(phiMass - mesonCandsFromK_mass.at(i));
+            if (thisDiff < bestPhiMassDiff) {
+                bestPhiMassDiff = thisDiff;
+                bestPhiCand = i;
             }
-        } // END Loop over Phi Candidates ----------------------
+        } // END Loop over meson cands from K --------------
+        // START Loop over meson cands from Pi -------------
+        for (unsigned int i = 0; i < mesonCandsFromPi_mass.size(); i++) {
+            float thisDiff = abs(rhoMass - mesonCandsFromPi_mass.at(i));
+            if (thisDiff < bestRhoMassDiff) {
+                bestRhoMassDiff = thisDiff;
+                bestRhoCand = i;
+            }
+        } // END Loop over meson cands from Pi -------------
     }
 
     /* --> Electrons <-- */
@@ -195,9 +254,7 @@ void mcTree::FillRecoBranches() {
         bool elsIDCut = (isMediumElectronPOGfall17noIso_v2(i));
         bool elsIsoCut = (elMiniRelIsoCMS3_EA(i, 3) < 0.1);
         // Store 'good' electrons
-        if (elsPtCut && elsIDCut && elsIsoCut) {
-            goodLeptons.push_back(i);
-        }
+        if (elsPtCut && elsIDCut && elsIsoCut) goodLeptons.push_back(i);
     } // END Loop over electrons ---------------------------
 
     /* --> Muons <-- */
@@ -207,23 +264,60 @@ void mcTree::FillRecoBranches() {
         bool musIDCut = (isMediumMuonPOG(i));
         bool musIsoCut = (muMiniRelIsoCMS3_EA(i, 3) < 0.2);
         // Store 'good' muons
-        if (musIDCut && musIsoCut) {
-            goodLeptons.push_back(i);
-        }
+        if (musIDCut && musIsoCut) goodLeptons.push_back(i); 
     } // END Loop over muons -------------------------------
 
     /* --> Photons <-- */
+    vector<int> goodPhotons;
     // START Loop over photons -----------------------------
-    for (unsigned int l = 0; l < evt_nphotons(); l++) {
+    for (unsigned int i = 0; i < photons_p4().size(); i++) {
+        // Define cuts for readability
+        bool photonPtCut = (photons_p4().at(i).pt() > 20);
+        bool photonEtaCut = (abs(photons_p4().at(i).eta()) < 2.5);
+        bool photonIDCut  = isLoosePhoton(i, analysis_t::HAD, 3);
+        // Store 'good' photons
+        if (photonPtCut && photonEtaCut && photonIDCut) goodPhotons.push_back(i);
     } // END Loop over photons -----------------------------
 
+    // Find best (highest Pt) photon
+    int bestPhoton = 0;
+    for (unsigned int j = 0; j < goodPhotons.size(); j++) {
+        float thisPhotonPt = photons_p4().at(goodPhotons.at(j)).pt();
+        float bestPhotonPt = photons_p4().at(goodPhotons.at(bestPhoton)).pt();
+        if (thisPhotonPt > bestPhotonPt) {
+            bestPhoton = j;
+        }
+    }
+
     // Retrieve products filled in loops, fill tree branches
-    if (phiCands_KpIdx.size() > 0 && abs(bestPhiMassDiff/phiMass) < 0.34) {
+    LorentzVector bestPhoton_p4; // Declare here, since used in following conditional
+    if (goodPhotons.size() > 0) {
+        // Best Photon
+        int bestPhoton_i = goodPhotons.at(bestPhoton);
+        bestPhoton_p4 = photons_p4().at(bestPhoton_i);
+        // Best Photon isolation
+        recoGamma_iso = photons_recoChargedHadronIso().at(bestPhoton_i);
+        // Best Photon kinematics
+        recoGamma_pt = bestPhoton_p4.pt();
+        recoGamma_eta = bestPhoton_p4.eta();
+        recoGamma_phi = bestPhoton_p4.phi();
+    }
+    if (bestPhiCand != -1) {
         // Best K+, K-
-        LorentzVector bestKp_p4 = pfcands_p4().at(phiCands_KpIdx.at(bestPhiCand));
-        LorentzVector bestKm_p4 = pfcands_p4().at(phiCands_KmIdx.at(bestPhiCand));
+        int bestKp_i = mesonCands_posHadronIdx.at(bestPhiCand);
+        int bestKm_i = mesonCands_negHadronIdx.at(bestPhiCand);
+        LorentzVector bestKp_p4 = pfcands_p4().at(bestKp_i);
+        LorentzVector bestKm_p4 = pfcands_p4().at(bestKm_i);
+        bestKp_p4.SetE(pow(bestKp_p4.P2()+pow(.493677,2), 0.5)); // Assumed by tracker to be a
+        bestKm_p4.SetE(pow(bestKm_p4.P2()+pow(.493677,2), 0.5)); // Pi, so must manually set E 
+        // Best Phi isolation
+        float bestKp_iso = pfcands_trackIso().at(bestKp_i);
+        float bestKm_iso = pfcands_trackIso().at(bestKm_i);
+        bestKp_iso = ((pfcands_dz().at(bestKm_i) >= 0 && pfcands_dz().at(bestKm_i) < 0.1) || pfcands_fromPV().at(bestKm_i) > 1) ? bestKp_iso - bestKm_p4.pt() : bestKp_iso;
+        bestKm_iso = ((pfcands_dz().at(bestKp_i) >= 0 && pfcands_dz().at(bestKp_i) < 0.1) || pfcands_fromPV().at(bestKp_i) > 1) ? bestKm_iso - bestKp_p4.pt() : bestKm_iso;
+        recoPhi_iso = max(bestKp_iso, bestKm_iso);
         // Best Phi cand mass
-        recoPhi_mass = phiCands_mass.at(bestPhiCand);
+        recoPhi_mass = mesonCandsFromK_mass.at(bestPhiCand);
         // Best K+, K- kinematics
         recoKp_pt = bestKp_p4.pt();
         recoKp_phi = bestKp_p4.phi();
@@ -232,6 +326,33 @@ void mcTree::FillRecoBranches() {
         recoKm_phi = bestKm_p4.phi();
         recoKm_eta = bestKm_p4.eta();
         recoKpKm_dR = dR(recoKp_phi, recoKm_phi, recoKp_eta, recoKm_eta);
+        // Best Higgs cand mass
+        if (goodPhotons.size() > 0) {
+            recoHiggs_mass = (bestKp_p4+bestKm_p4+bestPhoton_p4).M();
+        }
+    }
+    if (bestRhoCand != -1) {
+        // Best Pi+, Pi-
+        int bestPip_i = mesonCands_posHadronIdx.at(bestRhoCand);
+        int bestPim_i = mesonCands_negHadronIdx.at(bestRhoCand);
+        LorentzVector bestPip_p4 = pfcands_p4().at(bestPip_i);
+        LorentzVector bestPim_p4 = pfcands_p4().at(bestPim_i);
+        // Best Rho isolation
+        float bestPip_iso = pfcands_trackIso().at(bestPip_i);
+        float bestPim_iso = pfcands_trackIso().at(bestPim_i);
+        bestPip_iso = ((pfcands_dz().at(bestPim_i) >= 0 && pfcands_dz().at(bestPim_i) < 0.1) || pfcands_fromPV().at(bestPim_i) > 1) ? bestPip_iso - bestPim_p4.pt() : bestPip_iso;
+        bestPim_iso = ((pfcands_dz().at(bestPip_i) >= 0 && pfcands_dz().at(bestPip_i) < 0.1) || pfcands_fromPV().at(bestPip_i) > 1) ? bestPim_iso - bestPip_p4.pt() : bestPim_iso;
+        recoRho_iso = max(bestPip_iso, bestPim_iso);
+        // Best Rho cand mass
+        recoRho_mass = mesonCandsFromPi_mass.at(bestRhoCand);
+        // Best Pi+, Pi- kinematics
+        recoPip_pt = bestPip_p4.pt();
+        recoPim_phi = bestPip_p4.phi();
+        recoPip_eta = bestPip_p4.eta();
+        recoPim_pt = bestPim_p4.pt();
+        recoPip_phi = bestPim_p4.phi();
+        recoPim_eta = bestPim_p4.eta();
+        recoPipPim_dR = dR(recoPip_phi, recoPim_phi, recoPip_eta, recoPim_eta);
     }
 
     return;
@@ -307,10 +428,11 @@ void mcTree::FillGenBranches() {
     // General variables used for filling tree and code readability
     LorentzVector p4_sum;
     int decay;
+
     // Retrieve products filled in gen-level loop, fill tree branches
     if (daughters[W_to_MuNu].size() == 1 || daughters[W_to_ElNu].size() == 1) {
         decay = (daughters[W_to_MuNu].size() == 1) ? W_to_MuNu : W_to_ElNu;
-        p4_sum -= p4_sum;
+        p4_sum -= p4_sum; // Reset p4 sum
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
             // Get daughter index
             int idx = daughters[decay].at(j);
@@ -334,14 +456,14 @@ void mcTree::FillGenBranches() {
 
     if (daughters[H_to_PhiGamma].size() == 2 || daughters[H_to_RhoGamma].size() == 2) {
         decay = (daughters[H_to_PhiGamma].size() == 2) ? H_to_PhiGamma : H_to_RhoGamma;
-        p4_sum -= p4_sum;
+        p4_sum -= p4_sum; // Reset p4 sum
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
             // Get daughter index
             int idx = daughters[decay].at(j);
             // Get ID
             int id = genps_id().at(idx);
             // Fill photon branches
-            if (daughters[decay].at(j) == 22) {
+            if (id == 22) {
                 genGamma_pt = genps_p4()[idx].pt();
                 genGamma_eta = genps_p4()[idx].eta();
                 genGamma_phi = genps_p4()[idx].phi();
@@ -361,7 +483,7 @@ void mcTree::FillGenBranches() {
 
     if (daughters[Phi_to_KK].size() == 2) {
         decay = Phi_to_KK;
-        p4_sum -= p4_sum;
+        p4_sum -= p4_sum; // Reset p4 sum
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
             // Get daughter index
             int idx = daughters[decay].at(j);
