@@ -83,6 +83,10 @@ int BuildMCTree(TChain* chain, TString sample_name, bool verbose = false, bool f
             // Reset branch values
             mct->Reset();
 
+            // Fill metadata branches
+            mct->run = evt_run();
+            mct->lumi = evt_lumiBlock();
+            mct->event = evt_event();
             // Fill gen branches
             mct->FillGenBranches();
             // Fill reco branches
