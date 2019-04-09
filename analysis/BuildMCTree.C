@@ -91,6 +91,8 @@ int BuildMCTree(TChain* chain, TString sample_name, bool verbose = false, bool f
             mct->FillGenBranches();
             // Fill reco branches
             mct->FillRecoBranches();
+            // Fill gen-reco dR branches
+            mct->FillGenRecoBranches();
 
             // Fill tree
             mctree->Fill();
