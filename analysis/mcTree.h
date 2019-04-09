@@ -7,6 +7,9 @@ class mcTree {
     TBranch* b_run;
     TBranch* b_lumi;
     TBranch* b_event;
+    TBranch* b_genRecoGamma_dR;
+    TBranch* b_genRecoPhi_dR;
+    TBranch* b_genRecoRho_dR;
 
     /* --> Gen TTree Branches <-- */
     // W Boson
@@ -51,6 +54,9 @@ class mcTree {
     TBranch* b_recoHiggs_mass;
     // Reconstructed Phi
     TBranch* b_recoPhi_mass;
+    TBranch* b_recoPhi_pt;
+    TBranch* b_recoPhi_eta;
+    TBranch* b_recoPhi_phi;
     TBranch* b_recoPhi_iso;
     // K- from Phi
     TBranch* b_recoKm_pt;
@@ -64,6 +70,9 @@ class mcTree {
     TBranch* b_recoKpKm_dR;
     // Reconstructed Rho
     TBranch* b_recoRho_mass;
+    TBranch* b_recoRho_pt;
+    TBranch* b_recoRho_eta;
+    TBranch* b_recoRho_phi;
     TBranch* b_recoRho_iso;
     // Pi- from Rho
     TBranch* b_recoPim_pt; 
@@ -80,6 +89,12 @@ class mcTree {
     TBranch* b_recoGamma_phi;
     TBranch* b_recoGamma_eta;
     TBranch* b_recoGamma_iso;
+    // Leptons
+    TBranch* b_recoWLepton_id;
+    TBranch* b_recoWLepton_pt;
+    TBranch* b_recoWLepton_eta;
+    TBranch* b_recoWLepton_phi;
+    TBranch* b_recoWLepton_nLep;
 
     public:
         // TTree
@@ -89,6 +104,9 @@ class mcTree {
         int run;
         int lumi;
         int event;
+        float genRecoGamma_dR;
+        float genRecoPhi_dR;
+        float genRecoRho_dR;
 
         /* --> Gen TTree Branch Values <-- */
         // W Boson
@@ -97,7 +115,7 @@ class mcTree {
         float genW_phi;                                                             
         float genW_mass;
         // Lepton from W Boson
-        float genWLepton_id;
+        int genWLepton_id;
         float genWLepton_pt;
         float genWLepton_eta;
         float genWLepton_phi;                                                             
@@ -107,7 +125,7 @@ class mcTree {
         float genHiggs_phi;                                                             
         float genHiggs_mass;
         // Mesons from Higgs
-        float genHiggsMeson_id;
+        int genHiggsMeson_id;
         float genHiggsMeson_pt;
         float genHiggsMeson_eta;
         float genHiggsMeson_phi;
@@ -133,6 +151,9 @@ class mcTree {
         float recoHiggs_mass;
         // Reconstructed Phi
         float recoPhi_mass;
+        float recoPhi_pt;
+        float recoPhi_eta;
+        float recoPhi_phi;
         float recoPhi_iso;
         // K- from Phi
         float recoKm_pt;
@@ -146,6 +167,9 @@ class mcTree {
         float recoKpKm_dR;
         // Reconstructed Rho
         float recoRho_mass;
+        float recoRho_pt;
+        float recoRho_eta;
+        float recoRho_phi;
         float recoRho_iso;
         // Pi- from Rho
         float recoPim_pt; 
@@ -162,15 +186,22 @@ class mcTree {
         float recoGamma_phi;
         float recoGamma_eta;
         float recoGamma_iso;
+        // Leptons
+        int recoWLepton_id;
+        float recoWLepton_pt;
+        float recoWLepton_eta;
+        float recoWLepton_phi;
+        float recoWLepton_nLep;
 
         /* --> Methods <-- */
         // Constructor
         mcTree();
         // Reset Vars
         void Reset();
-        double dR(float, float, float, float);
-        void FillRecoBranches();
+        float dR(float, float, float, float);
         void FillGenBranches();
+        void FillRecoBranches();
+        void FillGenRecoBranches();
 };
 
 #endif
