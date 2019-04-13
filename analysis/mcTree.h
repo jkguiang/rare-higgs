@@ -52,6 +52,8 @@ class mcTree {
     /* --> Reco TTree Branches <-- */
     // Reconstructed Higgs
     TBranch* b_recoHiggs_mass;
+    // Reconstructed Mesons
+    TBranch* b_recoMeson_nCands;
     // Reconstructed Phi
     TBranch* b_recoPhi_mass;
     TBranch* b_recoPhi_pt;
@@ -60,12 +62,14 @@ class mcTree {
     TBranch* b_recoPhi_iso;
     // K- from Phi
     TBranch* b_recoKm_pt;
-    TBranch* b_recoKm_phi;
     TBranch* b_recoKm_eta;
+    TBranch* b_recoKm_phi;
+    TBranch* b_recoKm_iso;
     // K+ from Phi
     TBranch* b_recoKp_pt;
-    TBranch* b_recoKp_phi;
     TBranch* b_recoKp_eta;
+    TBranch* b_recoKp_phi;
+    TBranch* b_recoKp_iso;
     // dR between Kaons
     TBranch* b_recoKpKm_dR;
     // Reconstructed Rho
@@ -76,12 +80,14 @@ class mcTree {
     TBranch* b_recoRho_iso;
     // Pi- from Rho
     TBranch* b_recoPim_pt; 
-    TBranch* b_recoPim_phi;
     TBranch* b_recoPim_eta;
+    TBranch* b_recoPim_phi;
+    TBranch* b_recoPim_iso;
     // Pi+ from Rho
     TBranch* b_recoPip_pt;
-    TBranch* b_recoPip_phi;
     TBranch* b_recoPip_eta;
+    TBranch* b_recoPip_phi;
+    TBranch* b_recoPip_iso;
     // dR between Pions
     TBranch* b_recoPipPim_dR;
     // Photons
@@ -157,14 +163,18 @@ class mcTree {
         float recoPhi_iso;
         // K- from Phi
         float recoKm_pt;
-        float recoKm_phi;
         float recoKm_eta;
+        float recoKm_phi;
+        float recoKm_iso;
         // K+ from Phi
         float recoKp_pt;
-        float recoKp_phi;
         float recoKp_eta;
+        float recoKp_phi;
+        float recoKp_iso;
         // dR between Kaons
         float recoKpKm_dR;
+        // Reconstructed Mesons
+        int recoMeson_nCands;
         // Reconstructed Rho
         float recoRho_mass;
         float recoRho_pt;
@@ -173,12 +183,14 @@ class mcTree {
         float recoRho_iso;
         // Pi- from Rho
         float recoPim_pt; 
-        float recoPim_phi;
         float recoPim_eta;
+        float recoPim_phi;
+        float recoPim_iso;
         // Pi+ from Rho
         float recoPip_pt;
-        float recoPip_phi;
         float recoPip_eta;
+        float recoPip_phi;
+        float recoPip_iso;
         // dR between Pions
         float recoPipPim_dR;
         // Photons

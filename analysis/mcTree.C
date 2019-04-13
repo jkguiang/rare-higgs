@@ -75,6 +75,8 @@ mcTree::mcTree() {
     /* --> Reco Branches Setup <-- */
     // Reco Higgs
     b_recoHiggs_mass = t->Branch("recoHiggs_mass", &recoHiggs_mass, "recoHiggs_mass/F");
+    // Reco Mesons
+    b_recoMeson_nCands = t->Branch("recoMeson_nCands", &recoMeson_nCands, "recoMeson_nCands/I");
     // Reco Phi
     b_recoPhi_mass = t->Branch("recoPhi_mass", &recoPhi_mass, "recoPhi_mass/F");
     b_recoPhi_pt = t->Branch("recoPhi_pt", &recoPhi_pt, "recoPhi_pt/F");
@@ -83,11 +85,13 @@ mcTree::mcTree() {
     b_recoPhi_iso = t->Branch("recoPhi_iso", &recoPhi_iso, "recoPhi_iso/F");
     // Reco K+, K-
     b_recoKm_pt = t->Branch("recoKm_pt", &recoKm_pt, "recoKm_pt/F");
-    b_recoKm_phi = t->Branch("recoKm_phi", &recoKm_phi, "recoKm_phi/F");
     b_recoKm_eta = t->Branch("recoKm_eta", &recoKm_eta, "recoKm_eta/F");
+    b_recoKm_phi = t->Branch("recoKm_phi", &recoKm_phi, "recoKm_phi/F");
+    b_recoKm_iso = t->Branch("recoKm_iso", &recoKm_iso, "recoKm_iso/F");
     b_recoKp_pt = t->Branch("recoKp_pt", &recoKp_pt, "recoKp_pt/F");
-    b_recoKp_phi = t->Branch("recoKp_phi", &recoKp_phi, "recoKp_phi/F");
     b_recoKp_eta = t->Branch("recoKp_eta", &recoKp_eta, "recoKp_eta/F");
+    b_recoKp_phi = t->Branch("recoKp_phi", &recoKp_phi, "recoKp_phi/F");
+    b_recoKp_iso = t->Branch("recoKp_iso", &recoKp_iso, "recoKp_iso/F");
     b_recoKpKm_dR = t->Branch("recoKpKm_dR", &recoKpKm_dR, "recoKpKm_dR/F");
     // Reco Rho
     b_recoRho_mass = t->Branch("recoRho_mass", &recoRho_mass, "recoRho_mass/F");
@@ -97,11 +101,13 @@ mcTree::mcTree() {
     b_recoRho_iso = t->Branch("recoRho_iso", &recoRho_iso, "recoRho_iso/F");
     // Reco Pi+, Pi-
     b_recoPim_pt = t->Branch("recoPim_pt", &recoPim_pt, "recoPim_pt/F");
-    b_recoPim_phi = t->Branch("recoPim_phi", &recoPim_phi, "recoPim_phi/F");
     b_recoPim_eta = t->Branch("recoPim_eta", &recoPim_eta, "recoPim_eta/F");
+    b_recoPim_phi = t->Branch("recoPim_phi", &recoPim_phi, "recoPim_phi/F");
+    b_recoPim_iso = t->Branch("recoPim_iso", &recoPim_iso, "recoPim_iso/F");
     b_recoPip_pt = t->Branch("recoPip_pt", &recoPip_pt, "recoPip_pt/F");
-    b_recoPip_phi = t->Branch("recoPip_phi", &recoPip_phi, "recoPip_phi/F");
     b_recoPip_eta = t->Branch("recoPip_eta", &recoPip_eta, "recoPip_eta/F");
+    b_recoPip_phi = t->Branch("recoPip_phi", &recoPip_phi, "recoPip_phi/F");
+    b_recoPip_iso = t->Branch("recoPip_iso", &recoPip_iso, "recoPip_iso/F");
     b_recoPipPim_dR = t->Branch("recoPipPim_dR", &recoPipPim_dR, "recoPipPim_dR/F");
     // Reco Photons
     b_recoGamma_pt = t->Branch("recoGamma_pt", &recoGamma_pt, "recoGamma_pt/F");
@@ -155,17 +161,20 @@ void mcTree::Reset() {
     genKpKm_dR = -999;
     // Reco
     recoHiggs_mass = -999;
+    recoMeson_nCands = -999;
     recoPhi_mass = -999;
     recoPhi_pt = -999;
     recoPhi_eta = -999;
     recoPhi_phi = -999;
     recoPhi_iso = -999;
     recoKm_pt = -999;
-    recoKm_phi = -999;
     recoKm_eta = -999;
+    recoKm_phi = -999;
+    recoKm_iso = -999;
     recoKp_pt = -999;
-    recoKp_phi = -999;
     recoKp_eta = -999;
+    recoKp_phi = -999;
+    recoKp_iso = -999;
     recoKpKm_dR = -999;
     recoRho_mass = -999;
     recoRho_pt = -999;
@@ -173,11 +182,13 @@ void mcTree::Reset() {
     recoRho_phi = -999;
     recoRho_iso = -999;
     recoPim_pt = -999; 
-    recoPim_phi = -999;
     recoPim_eta = -999;
+    recoPim_phi = -999;
+    recoPim_iso = -999;
     recoPip_pt = -999;
-    recoPip_phi = -999;
     recoPip_eta = -999;
+    recoPip_phi = -999;
+    recoPip_iso = -999;
     recoPipPim_dR = -999;
     recoGamma_pt = -999;
     recoGamma_phi = -999;
@@ -360,7 +371,7 @@ void mcTree::FillRecoBranches() {
     vector<int> negHadronIdxs;
     // START Loop over pfcands -----------------------------
     for (unsigned int i = 0; i < pfcands_p4().size(); i++) {
-        // Find Kaons
+        // Find Kaons (and Pions)
         int thisID = pfcands_particleId().at(i);
         if (thisID == 211) posHadronIdxs.push_back(i);
         else if (thisID == -211) negHadronIdxs.push_back(i);
@@ -371,17 +382,17 @@ void mcTree::FillRecoBranches() {
     vector<float> mesonCandsFromPi_mass;
     vector<int> mesonCands_posHadronIdx;
     vector<int> mesonCands_negHadronIdx;
-    // START Loop over K+ mesons ---------------------------
+    // START Loop over neg hadrons -------------------------
     for (unsigned int i = 0; i < posHadronIdxs.size(); i++) {
         int posHadron_i = posHadronIdxs.at(i);
         float posHadron_pt = pfcands_p4()[posHadron_i].pt();
-        // Only consider high-pt K+ mesons
+        // Only consider high-pt pos hadrons
         if (posHadron_pt < 10) continue;
-        // START Loop over K- mesons -----------------------
+        // START Loop over neg hadrons ---------------------
         for (unsigned int j = 0; j < negHadronIdxs.size(); j++) {
             int negHadron_i = negHadronIdxs.at(j);
             float negHadron_pt = pfcands_p4()[negHadron_i].pt();
-            // Only consider high-pt K- mesons
+            // Only consider high-pt neg hadrons
             if (negHadron_pt < 10) continue;
             // Get Kaon pair p4
             LorentzVector posHadron_p4 = pfcands_p4()[posHadron_i];
@@ -393,9 +404,21 @@ void mcTree::FillRecoBranches() {
             float negHadron_eta = negHadron_p4.eta();
             // Ignore large eta
             if (abs(posHadron_eta) > 2.4 || abs(negHadron_eta) > 2.4) continue;
-            // Get dR between kaons
-            float PosnegHadron_dR = dR(posHadron_phi, negHadron_phi, posHadron_eta, negHadron_eta);
-            if (PosnegHadron_dR < 0.1) {
+            // Get hadron isolation
+            float posHadron_iso = pfcands_trackIso().at(posHadron_i);
+            float negHadron_iso = pfcands_trackIso().at(negHadron_i);
+            bool posHadron_dzCheck = (pfcands_dz().at(posHadron_i) >= 0 && pfcands_dz().at(posHadron_i) < 0.1);
+            bool negHadron_dzCheck = (pfcands_dz().at(negHadron_i) >= 0 && pfcands_dz().at(negHadron_i) < 0.1);
+            posHadron_iso = (negHadron_dzCheck || pfcands_fromPV().at(negHadron_i) > 1) ? posHadron_iso - negHadron_p4.pt() : posHadron_iso;
+            negHadron_iso = (posHadron_dzCheck || pfcands_fromPV().at(posHadron_i) > 1) ? negHadron_iso - posHadron_p4.pt() : negHadron_iso;
+            // Get meson candidate isolation
+            float meson_iso = max(posHadron_iso, negHadron_iso);
+            float meson_pt = (posHadron_p4+negHadron_p4).pt();
+            // Relative Isloation cut
+            if (meson_iso/meson_pt > 0.06) continue;
+            // Get dR between hadrons
+            float posNegHadron_dR = dR(posHadron_phi, negHadron_phi, posHadron_eta, negHadron_eta);
+            if (posNegHadron_dR < 0.1) {
                 // Pi hypothesis
                 float mesonFromPi_mass = (posHadron_p4 + negHadron_p4).M();    
                 // K hypothesis
@@ -408,14 +431,12 @@ void mcTree::FillRecoBranches() {
                 mesonCands_posHadronIdx.push_back(posHadron_i);
                 mesonCands_negHadronIdx.push_back(negHadron_i);
             }
-        } // END Loop over K- mesons -----------------------
-    } // END Loop over K+ mesons ---------------------------
+        } // END Loop over neg hadrons --------------------
+    } // END Loop over neg hadrons ------------------------
 
     // Find best Phi, Rho candidates
-    int bestPhiCand = -1;
-    int bestRhoCand = -1;
-    float bestPhiMassDiff = 10.0;
-    float bestRhoMassDiff = 10.0;
+    int bestPhiCand = 0;
+    int bestRhoCand = 0;
     float phiMass = 1.019;
     float rhoMass = 0.775;
     // Check if any meson candidates found
@@ -423,16 +444,16 @@ void mcTree::FillRecoBranches() {
         // START Loop over meson cands from K --------------
         for (unsigned int i = 0; i < mesonCandsFromK_mass.size(); i++) {
             float thisDiff = abs(phiMass - mesonCandsFromK_mass.at(i));
-            if (thisDiff < bestPhiMassDiff) {
-                bestPhiMassDiff = thisDiff;
+            float bestDiff = abs(phiMass - mesonCandsFromK_mass.at(bestPhiCand));
+            if (thisDiff < bestDiff) {
                 bestPhiCand = i;
             }
         } // END Loop over meson cands from K --------------
         // START Loop over meson cands from Pi -------------
         for (unsigned int i = 0; i < mesonCandsFromPi_mass.size(); i++) {
             float thisDiff = abs(rhoMass - mesonCandsFromPi_mass.at(i));
-            if (thisDiff < bestRhoMassDiff) {
-                bestRhoMassDiff = thisDiff;
+            float bestDiff = abs(rhoMass - mesonCandsFromPi_mass.at(bestRhoCand));
+            if (thisDiff < bestDiff) {
                 bestRhoCand = i;
             }
         } // END Loop over meson cands from Pi -------------
@@ -469,14 +490,17 @@ void mcTree::FillRecoBranches() {
         }
     } // END Loop over muons -------------------------------
 
-    // Find best (highest Pt) lepton, should only be one to choose from
+    // Find best (highest Pt) lepton, should usually only be one to choose from
     int bestLepton = 0;
     if (goodLeptonIdxs.size() > 1) {
         for (unsigned int i = 0; i < goodLeptonIdxs.size(); i++) {
-            vector<LorentzVector> lep_p4 = (goodLeptonIDs.at(i) == 11) ? els_p4() : mus_p4();
-            float thisLeptonPt = lep_p4.at(goodLeptonIdxs.at(i)).pt();
-            float bestLeptonPt = lep_p4.at(goodLeptonIdxs.at(bestLepton)).pt();
-            if (thisLeptonPt > bestLeptonPt) {
+            int tl = goodLeptonIdxs.at(i);
+            int bl = goodLeptonIdxs.at(bestLepton);
+            LorentzVector thisLepton_p4 = (goodLeptonIDs.at(i) == 11) ? els_p4().at(tl) : mus_p4().at(tl);
+            LorentzVector bestLepton_p4 = (goodLeptonIDs.at(bestLepton) == 11) ? els_p4().at(bl) : mus_p4().at(bl);
+            float thisLepton_pt = thisLepton_p4.pt();
+            float bestLepton_pt = bestLepton_p4.pt();
+            if (thisLepton_pt > bestLepton_pt) {
                 bestLepton = i;
             }
         }
@@ -486,20 +510,24 @@ void mcTree::FillRecoBranches() {
     vector<int> goodPhotons;
     // START Loop over photons -----------------------------
     for (unsigned int i = 0; i < photons_p4().size(); i++) {
+        LorentzVector photon_p4 = photons_p4().at(i);
+        float photon_pt = photon_p4.pt();
         // Define cuts for readability
-        bool photonPtCut = (photons_p4().at(i).pt() > 20);
-        bool photonEtaCut = (abs(photons_p4().at(i).eta()) < 2.5);
-        bool photonIDCut  = isLoosePhoton(i, analysis_t::HAD, 3);
+        bool photonPtCut = (photon_pt > 20);
+        bool photonEtaCut = (abs(photon_p4.eta()) < 2.5);
+        // bool photonLooseIDCut  = isLoosePhoton(i, analysis_t::HAD, 3);
+        bool photonTightIDCut  = isTightPhoton(i, analysis_t::HAD, 3);
+        bool photonIsoCut = (photons_recoChargedHadronIso().at(i)/photon_pt < 0.06);
         // Store 'good' photons
-        if (photonPtCut && photonEtaCut && photonIDCut) goodPhotons.push_back(i);
+        if (photonPtCut && photonEtaCut && photonTightIDCut && photonIsoCut) goodPhotons.push_back(i);
     } // END Loop over photons -----------------------------
 
     // Find best (highest Pt) photon
     int bestPhoton = 0;
     for (unsigned int i = 0; i < goodPhotons.size(); i++) {
-        float thisPhotonPt = photons_p4().at(goodPhotons.at(i)).pt();
-        float bestPhotonPt = photons_p4().at(goodPhotons.at(bestPhoton)).pt();
-        if (thisPhotonPt > bestPhotonPt) {
+        float thisPhoton_pt = photons_p4().at(goodPhotons.at(i)).pt();
+        float bestPhoton_pt = photons_p4().at(goodPhotons.at(bestPhoton)).pt();
+        if (thisPhoton_pt > bestPhoton_pt) {
             bestPhoton = i;
         }
     }
@@ -535,7 +563,7 @@ void mcTree::FillRecoBranches() {
     }
 
     /* --> Best Phi Candidate <-- */
-    if (bestPhiCand != -1) {
+    if (mesonCandsFromK_mass.size() > 0) {
         // Best K+, K-
         int bestKp_i = mesonCands_posHadronIdx.at(bestPhiCand);
         int bestKm_i = mesonCands_negHadronIdx.at(bestPhiCand);
@@ -545,12 +573,14 @@ void mcTree::FillRecoBranches() {
         bestKm_p4.SetE(pow(bestKm_p4.P2()+pow(.493677,2), 0.5)); // Pi, so must manually set E 
         // Best Phi
         LorentzVector bestPhi_p4 = bestKp_p4+bestKm_p4;
-        // Best Phi isolation
+        // Best Phi, K+, K- isolation
         float bestKp_iso = pfcands_trackIso().at(bestKp_i);
         float bestKm_iso = pfcands_trackIso().at(bestKm_i);
         bestKp_iso = ((pfcands_dz().at(bestKm_i) >= 0 && pfcands_dz().at(bestKm_i) < 0.1) || pfcands_fromPV().at(bestKm_i) > 1) ? bestKp_iso - bestKm_p4.pt() : bestKp_iso;
         bestKm_iso = ((pfcands_dz().at(bestKp_i) >= 0 && pfcands_dz().at(bestKp_i) < 0.1) || pfcands_fromPV().at(bestKp_i) > 1) ? bestKm_iso - bestKp_p4.pt() : bestKm_iso;
         recoPhi_iso = max(bestKp_iso, bestKm_iso);
+        recoKp_iso = bestKp_iso;
+        recoKm_iso = bestKm_iso;
         // Best Phi cand mass
         recoPhi_mass = mesonCandsFromK_mass.at(bestPhiCand);
         recoPhi_pt = bestPhi_p4.pt();
@@ -571,7 +601,7 @@ void mcTree::FillRecoBranches() {
     }
 
     /* --> Best Rho Candidate <-- */
-    if (bestRhoCand != -1) {
+    if (mesonCandsFromPi_mass.size() > 0) {
         // Best Pi+, Pi-
         int bestPip_i = mesonCands_posHadronIdx.at(bestRhoCand);
         int bestPim_i = mesonCands_negHadronIdx.at(bestRhoCand);
@@ -579,12 +609,14 @@ void mcTree::FillRecoBranches() {
         LorentzVector bestPim_p4 = pfcands_p4().at(bestPim_i);
         // Best Rho
         LorentzVector bestRho_p4 = bestPip_p4+bestPim_p4;
-        // Best Rho isolation
+        // Best Rho, Pi+, Pi- isolation
         float bestPip_iso = pfcands_trackIso().at(bestPip_i);
         float bestPim_iso = pfcands_trackIso().at(bestPim_i);
         bestPip_iso = ((pfcands_dz().at(bestPim_i) >= 0 && pfcands_dz().at(bestPim_i) < 0.1) || pfcands_fromPV().at(bestPim_i) > 1) ? bestPip_iso - bestPim_p4.pt() : bestPip_iso;
         bestPim_iso = ((pfcands_dz().at(bestPip_i) >= 0 && pfcands_dz().at(bestPip_i) < 0.1) || pfcands_fromPV().at(bestPip_i) > 1) ? bestPim_iso - bestPip_p4.pt() : bestPim_iso;
         recoRho_iso = max(bestPip_iso, bestPim_iso);
+        recoPip_iso = bestPip_iso;
+        recoPim_iso = bestPim_iso;
         // Best Rho cand mass
         recoRho_mass = mesonCandsFromPi_mass.at(bestRhoCand);
         recoRho_pt = bestRho_p4.pt();
@@ -603,6 +635,9 @@ void mcTree::FillRecoBranches() {
             recoHiggs_mass = (bestPip_p4+bestPim_p4+bestPhoton_p4).M();
         }
     }
+
+    // Save number of meson candidates
+    recoMeson_nCands = mesonCandsFromK_mass.size(); // number of cands from K, pi are the same
 
     return;
 }
