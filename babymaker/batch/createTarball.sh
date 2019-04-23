@@ -1,9 +1,10 @@
 #! /bin/bash
 
-# if [ -f package.tar.xz ]; then
-#     rm ./package.tar.xz
-# fi
+if [ -f package.tar.xz ]; then
+    rm ./package.tar.xz
+fi
 
-tar -hcJf package.tar.xz ../CORE/*.h ../CORE/Tools/*.h ../CORE/jetcorr/*.h ../CORE/datasetinfo/*.h ../ScanChain_C.so ../mcTree_C.so ../doAll.py
-
-
+tar -hcJf package.tar.xz \
+    ../CORE/*.h ../CORE/Tools/*.h ../CORE/Tools/jetcorr/*.h ../CORE/Tools/datasetinfo/*.h ../CMS3_CORE.so \
+    ../ScanChain.C ../mcTree.h ../mcTree.C \
+    ../copyTree.py ../doAll.py
