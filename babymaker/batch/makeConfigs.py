@@ -1,18 +1,18 @@
 import glob, os, subprocess
 from textwrap import dedent
 
-def MakeConfigs(sample, project, test=False):
+def MakeConfigs(sample, project, test=False, verbose=True):
 
     # Check for valid sample path
     if not os.path.isdir(sample):
-        print("WARNING: Skipping {} -- directory does not exist.".format(sample))
+        if verbose: print("WARNING: Skipping {} -- directory does not exist.".format(sample))
         return
 
     # Get sample files
     files = glob.glob("{}/*.root".format(sample))
     # Check for non-zero input .root files
     if len(files) == 0:
-        print("WARNING: Skipping {} -- contains 0 .root files.".format(sample))
+        if verbose: print("WARNING: Skipping {} -- contains 0 .root files.".format(sample))
         return
 
     # Get sample name
@@ -25,13 +25,14 @@ def MakeConfigs(sample, project, test=False):
 
     # Get output directory
     user = os.environ["USER"]
-    outdir = "/hadoop/cms/store/user/{0}/{1}/{2}".format(user, project, name)
+    outdir = "/hadoop/cms/store/user/{0}/{1}/{2}".format(user, project, ("test_" if test else "")+name)
 
     # Create config directory if missing
     if not os.path.isdir("configs"): os.mkdir("configs")
 
     # Write config file
-    with open("configs/{0}config_{1}.cmd".format("test_" if test else "", name), 'w') as fout:
+    outFile = "configs/{0}config_{1}.cmd".format("test_" if test else "", name)
+    with open(outFile, 'w') as fout:
         # Get credentials
         x509file = subprocess.check_output(["find","/tmp/", "-maxdepth", "1", "-type", "f", "-user", user, "-regex", "^.*x509.*$"])
         os.system("mkdir -p /data/tmp/{0}/condor_job_logs/{1}/".format(user, project))
@@ -65,9 +66,10 @@ def MakeConfigs(sample, project, test=False):
 
 if __name__ == "__main__":
     project = "rare-higgs"
-    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1_MINIAODSIM_CMS4_V10-02-04", project, test=True)
-    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/TTGamma_SingleLeptFromT_TuneCP5_13TeV_madgraph_pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15_ext1-v2_MINIAODSIM_CMS4_V10-02-04", project, test=True)
-    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/TTGamma_SingleLeptFromTbar_TuneCP5_13TeV_madgraph_pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15_ext1-v2_MINIAODSIM_CMS4_V10-02-04", project, test=True)
-    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v2_MINIAODSIM_CMS4_V10-02-04", project, test=True)
-    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/TTJets_SingleLeptFromT_TuneCP5_13TeV-madgraphMLM-pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1_MINIAODSIM_CMS4_V10-02-04", project, test=True)
-    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/TTJets_SingleLeptFromTbar_TuneCP5_13TeV-madgraphMLM-pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1_MINIAODSIM_CMS4_V10-02-04", project, test=True)
+    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018_private/WH_HtoRhoGammaPhiGamma_privateMC_102x_MINIAOD_v1", project, test=False)
+    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1_MINIAODSIM_CMS4_V10-02-04", project, test=False)
+    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/TTGamma_SingleLeptFromT_TuneCP5_13TeV_madgraph_pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15_ext1-v2_MINIAODSIM_CMS4_V10-02-04", project, test=False)
+    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/TTGamma_SingleLeptFromTbar_TuneCP5_13TeV_madgraph_pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15_ext1-v2_MINIAODSIM_CMS4_V10-02-04", project, test=False)
+    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v2_MINIAODSIM_CMS4_V10-02-04", project, test=False)
+    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/TTJets_SingleLeptFromT_TuneCP5_13TeV-madgraphMLM-pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1_MINIAODSIM_CMS4_V10-02-04", project, test=False)
+    MakeConfigs("/hadoop/cms/store/group/snt/run2_mc2018/TTJets_SingleLeptFromTbar_TuneCP5_13TeV-madgraphMLM-pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1_MINIAODSIM_CMS4_V10-02-04", project, test=False)
