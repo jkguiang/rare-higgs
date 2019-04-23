@@ -22,7 +22,7 @@
 #include "CORE/Tools/datasetinfo/getDatasetInfo.h"
 
 // Custom
-#include "RPGCORE/mcTree.h"
+#include "mcTree.h"
 
 // Namespaces
 using namespace std;
@@ -31,7 +31,7 @@ using namespace tas;
 // Global Variables
 DatasetInfoFromFile datasetInfoFromFile;
 
-int BuildMCTree(TChain* chain, TString outName, TString sampleName, bool verbose = false, bool fast = true, int nEvents = -1, string skimFilePrefix = "test") {
+int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose = false, bool fast = true, int nEvents = -1, string skimFilePrefix = "test") {
 
     // Benchmark
     TBenchmark *bmark = new TBenchmark();
@@ -125,7 +125,7 @@ int BuildMCTree(TChain* chain, TString outName, TString sampleName, bool verbose
         cout << Form( "ERROR: number of events from files (%d) is not equal to total number of events (%d)", nEventsChain, nEventsTotal ) << endl;
     }
   
-    // Write trees
+    // Write tree
     f->cd();
     mctree->Write();
     f->Close();
