@@ -11,15 +11,31 @@ echo "[wrapper] COPYDIR   = " ${COPYDIR}
 
 # --> Environment <-- #
 # Version using cvmfs install of CMSSW
-CMSSW_VERSION=CMSSW_9_4_1
 echo "[wrapper] setting env"
-export SCRAM_ARCH=slc6_amd64_gcc630
-source /cvmfs/cms.cern.ch/cmsset_default.sh
-OLDDIR=`pwd`
-cd /cvmfs/cms.cern.ch/$SCRAM_ARCH/cms/cmssw/$CMSSW_VERSION/src
-# Set up cmssw env
+export CMSSWVERSION=CMSSW_10_2_5
+export SCRAM_ARCH=slc6_amd64_gcc700
+# Get grid environment
+if [ -r "$OSGVO_CMSSW_Path"/cmsset_default.sh ]; then
+    echo "sourcing environment: source $OSGVO_CMSSW_Path/cmsset_default.sh"
+    source "$OSGVO_CMSSW_Path"/cmsset_default.sh
+elif [ -r "$OSG_APP"/cmssoft/cms/cmsset_default.sh ]; then
+    echo "sourcing environment: source $OSG_APP/cmssoft/cms/cmsset_default.sh"
+    source "$OSG_APP"/cmssoft/cms/cmsset_default.sh
+elif [ -r /cvmfs/cms.cern.ch/cmsset_default.sh ]; then
+    echo "sourcing environment: source /cvmfs/cms.cern.ch/cmsset_default.sh"
+    source /cvmfs/cms.cern.ch/cmsset_default.sh
+else
+    echo "ERROR! Couldn't find $OSGVO_CMSSW_Path/cmsset_default.sh or /cvmfs/cms.cern.ch/cmsset_default.sh or $OSG_APP/cmssoft/cms/cmsset_default.sh"
+    exit 1
+fi
+# Sets up CMSSW folder, cd into it
+eval `scramv1 project CMSSW $CMSSWVERSION`
+# Move files to CMSSW directory
+mv *.tar.xz *.py *.C *.so $CMSSWVERSION
+# Move to CMSSW directory
+cd $CMSSWVERSION
 eval `scramv1 runtime -sh`
-cd $OLDDIR
+
 # Log basic job info
 echo "[wrapper] hostname  = " `hostname`
 echo "[wrapper] date      = " `date`
@@ -63,11 +79,21 @@ if [ ! -d "${COPYDIR}" ]; then
     mkdir ${COPYDIR}
 fi
 # Copy output to destination
-export LD_PRELOAD=/usr/lib64/gfal2-plugins/libgfal_plugin_xrootd.so
-gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUT} gsiftp://gftp.t2.ucsd.edu${COPYDIR}/output_${FILEID}.root
-# Clean up remaining files
-echo "[wrapper] cleaning up"
-for FILE in `find . -not -name "*stderr" -not -name "*stdout"`; do rm -rf $FILE; done
-echo "[wrapper] cleaned up"
+COPY_SRC="file://`pwd`/${OUTPUT}"
+COPY_DEST="gsiftp://gftp.t2.ucsd.edu${COPYDIR}/output_${FILEID}.root"
+echo "Running: env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 7200 --verbose --checksum ADLER32 ${COPY_SRC} ${COPY_DEST}"
+env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 7200 --verbose --checksum ADLER32 ${COPY_SRC} ${COPY_DEST} 
+COPY_STATUS=$?
+if [[ $COPY_STATUS != 0 ]]; then
+    echo "Removing output file because gfal-copy crashed with code $COPY_STATUS"
+    env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-rm --verbose ${COPY_DEST}
+    REMOVE_STATUS=$?
+    if [[ $REMOVE_STATUS != 0 ]]; then
+        echo "Uhh, gfal-copy crashed and then the gfal-rm also crashed with code $REMOVE_STATUS"
+        echo "You probably have a corrupt file sitting on hadoop now."
+        exit 1
+    fi
+fi
+# Log remaining files
 pwd
 ls
