@@ -14,28 +14,33 @@
 #include "TString.h"
 
 // CMS3
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/CMS3.h"
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/ElectronSelections.h"
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/MuonSelections.h"
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/IsolationTools.h"
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/TriggerSelections.h"
+#include "CORE/CMS3.h"
+#include "CORE/ElectronSelections.h"
+#include "CORE/MuonSelections.h"
+#include "CORE/IsolationTools.h"
+#include "CORE/TriggerSelections.h"
+#include "CORE/Tools/datasetinfo/getDatasetInfo.h"
 
 // Custom
-#include "mcTree.h"
+#include "RPGCORE/mcTree.h"
 
+// Namespaces
 using namespace std;
 using namespace tas;
 
-int BuildMCTree(TChain* chain, TString sample_name, bool verbose = false, bool fast = true, int nEvents = -1, string skimFilePrefix = "test") {
+// Global Variables
+DatasetInfoFromFile datasetInfoFromFile;
+
+int BuildMCTree(TChain* chain, TString outName, TString sampleName, bool verbose = false, bool fast = true, int nEvents = -1, string skimFilePrefix = "test") {
 
     // Benchmark
     TBenchmark *bmark = new TBenchmark();
     bmark->Start("benchmark");
 
-    // Iniitialize TFile
-    TFile* f = new TFile(sample_name, "RECREATE");
+    // Initialize TFile
+    TFile* f = new TFile(outName, "RECREATE");
 
-    // Get Tree
+    // Initialize TTree
     mcTree* mct = new mcTree();
     TTree* mctree = mct->t;
 
@@ -80,6 +85,9 @@ int BuildMCTree(TChain* chain, TString sample_name, bool verbose = false, bool f
             // Missing Et
             double met = evt_pfmet();
 
+            // Is Signal
+            bool isSignal = sampleName.Contains("WH_HtoRhoGammaPhiGamma");
+
             // Reset branch values
             mct->Reset();
 
@@ -87,8 +95,17 @@ int BuildMCTree(TChain* chain, TString sample_name, bool verbose = false, bool f
             mct->run = evt_run();
             mct->lumi = evt_lumiBlock();
             mct->event = evt_event();
+            if (isSignal) {
+                // No sf for signal
+                mct->scale1fb = 1;
+            }
+            else {
+                const string datasetName = cms3.evt_dataset().at(0).Data();
+                TString cms3_version = cms3.evt_CMS3tag().at(0);
+                mct->scale1fb = datasetInfoFromFile.getScale1fbFromFile(datasetName, cms3_version.Data());
+            }
             // Fill gen branches
-            mct->FillGenBranches();
+            if (isSignal) mct->FillGenBranches();
             // Fill reco branches
             mct->FillRecoBranches();
             // Fill gen-reco dR branches

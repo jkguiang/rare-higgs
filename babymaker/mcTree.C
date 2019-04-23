@@ -1,3 +1,5 @@
+// -*- C++ -*-
+
 // C++
 #include <iostream>
 #include <vector>
@@ -12,16 +14,18 @@
 #include "TString.h"
 
 // CMS3
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/CMS3.h"
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/ElectronSelections.h"
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/MuonSelections.h"
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/PhotonSelections.h"
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/IsolationTools.h"
-#include "/home/users/jguiang/projects/mt2/MT2Analysis/CORE/TriggerSelections.h"
+#include "CORE/CMS3.h"
+#include "CORE/ElectronSelections.h"
+#include "CORE/MuonSelections.h"
+#include "CORE/PhotonSelections.h"
+#include "CORE/IsolationTools.h"
+#include "CORE/TriggerSelections.h"
+#include "CORE/Tools/datasetinfo/getDatasetInfo.h"
 
 // Header
-#include "mcTree.h"
+#include "RPGCORE/mcTree.h"
 
+// Namespaces
 using namespace std;
 using namespace tas;
 
@@ -33,6 +37,7 @@ mcTree::mcTree() {
     b_run = t->Branch("run", &run, "run/I");
     b_lumi = t->Branch("lumi", &lumi, "lumi/I");
     b_event = t->Branch("event", &event, "event/I");
+    b_scale1fb = t->Branch("scale1fb", &scale1fb, "scale1fb/F");
     // Gen-Reco dR
     b_genRecoGamma_dR = t->Branch("genRecoGamma_dR", &genRecoGamma_dR, "genRecoGamma_dR/F");
     b_genRecoPhi_dR = t->Branch("genRecoPhi_dR", &genRecoPhi_dR, "genRecoPhi_dR/F");
@@ -114,6 +119,8 @@ mcTree::mcTree() {
     b_recoGamma_phi = t->Branch("recoGamma_phi", &recoGamma_phi, "recoGamma_phi/F");
     b_recoGamma_eta = t->Branch("recoGamma_eta", &recoGamma_eta, "recoGamma_eta/F");
     b_recoGamma_iso = t->Branch("recoGamma_iso", &recoGamma_iso, "recoGamma_iso/F");
+    b_genRecoGamma_isMatch = t->Branch("genRecoGamma_isMatch", &genRecoGamma_isMatch, "genRecoGamma_isMatch/I");
+    b_minGammaParton_dR = t->Branch("minGammaParton_dR", &minGammaParton_dR, "minGammaParton_dR/F");
     // Reco Leptons
     b_recoWLepton_id = t->Branch("recoWLepton_id", &recoWLepton_id, "recoWLepton_id/I");
     b_recoWLepton_pt = t->Branch("recoWLepton_pt", &recoWLepton_pt, "recoWLepton_pt/F");
@@ -127,6 +134,7 @@ void mcTree::Reset() {
     run = -999;
     lumi = -999;
     event = -999;
+    scale1fb = -999;
     genRecoGamma_dR = -999;
     genRecoPhi_dR = -999;
     genRecoRho_dR = -999;
@@ -194,6 +202,8 @@ void mcTree::Reset() {
     recoGamma_phi = -999;
     recoGamma_eta = -999;
     recoGamma_iso = -999;
+    genRecoGamma_isMatch = -999;
+    minGammaParton_dR = -999;
     recoWLepton_id = -999;
     recoWLepton_pt = -999;
     recoWLepton_eta = -999;
@@ -492,17 +502,15 @@ void mcTree::FillRecoBranches() {
 
     // Find best (highest Pt) lepton, should usually only be one to choose from
     int bestLepton = 0;
-    if (goodLeptonIdxs.size() > 1) {
-        for (unsigned int i = 0; i < goodLeptonIdxs.size(); i++) {
-            int tl = goodLeptonIdxs.at(i);
-            int bl = goodLeptonIdxs.at(bestLepton);
-            LorentzVector thisLepton_p4 = (goodLeptonIDs.at(i) == 11) ? els_p4().at(tl) : mus_p4().at(tl);
-            LorentzVector bestLepton_p4 = (goodLeptonIDs.at(bestLepton) == 11) ? els_p4().at(bl) : mus_p4().at(bl);
-            float thisLepton_pt = thisLepton_p4.pt();
-            float bestLepton_pt = bestLepton_p4.pt();
-            if (thisLepton_pt > bestLepton_pt) {
-                bestLepton = i;
-            }
+    for (unsigned int i = 0; i < goodLeptonIdxs.size(); i++) {
+        int tl = goodLeptonIdxs.at(i);
+        int bl = goodLeptonIdxs.at(bestLepton);
+        LorentzVector thisLepton_p4 = (goodLeptonIDs.at(i) == 11) ? els_p4().at(tl) : mus_p4().at(tl);
+        float thisLepton_pt = thisLepton_p4.pt();
+        LorentzVector bestLepton_p4 = (goodLeptonIDs.at(bestLepton) == 11) ? els_p4().at(bl) : mus_p4().at(bl);
+        float bestLepton_pt = bestLepton_p4.pt();
+        if (thisLepton_pt > bestLepton_pt) {
+            bestLepton = i;
         }
     }
 
@@ -532,6 +540,55 @@ void mcTree::FillRecoBranches() {
         }
     }
 
+    // Find best gen photon match
+    int bestMatch = -1;
+    float minPhotonParton_dR = 999.; 
+    if (!evt_isRealData() && goodPhotons.size() > 0) {
+        float bestMatch_dR = 0.1;
+        float bestMatch_eta = 999;
+        float bestMatch_phi = 999;
+        for (unsigned int i = 0; i < genps_p4().size(); i++) {
+            LorentzVector thisPhoton_p4 = genps_p4().at(i);
+            float thisPhoton_pt = thisPhoton_p4.pt();
+            float thisPhoton_eta = thisPhoton_p4.eta();
+            float thisPhoton_phi = thisPhoton_p4.phi();
+            LorentzVector recoPhoton_p4 = photons_p4().at(goodPhotons.at(bestPhoton));
+            float recoPhoton_pt = recoPhoton_p4.pt();
+            float recoPhoton_eta = recoPhoton_p4.eta();
+            float recoPhoton_phi = recoPhoton_p4.phi();
+            // Only consider final-state photons
+            if (genps_id().at(i) != 22) continue;
+            if (genps_status().at(i) != 1) continue; 
+            if (fabs(genps_id_simplemother().at(i)) > 22  && genps_id_simplemother().at(i) != 2212) continue; // pions etc // but keep photons from the leading proton
+            // Pre-dR cut (saves on computation time)
+            if (fabs(recoPhoton_eta - thisPhoton_eta) > 0.1) continue;
+            // Pt cut
+            if (recoPhoton_pt > 2*thisPhoton_pt || recoPhoton_pt < 0.5*thisPhoton_pt) continue;
+            // Get/compare dR
+            float thisMatch_dR = dR(thisPhoton_eta, recoPhoton_eta, thisPhoton_phi, recoPhoton_phi);
+            if (thisMatch_dR < bestMatch_dR) {
+                bestMatch = i;
+                bestMatch_dR = thisMatch_dR;
+                bestMatch_eta = thisPhoton_eta;
+                bestMatch_phi = thisPhoton_phi;
+            }
+            // Find closest parton
+            if (bestMatch != -1) {
+                for(unsigned int i = 0; i < genps_p4().size(); i++){
+                    if (genps_status().at(i) != 22 && genps_status().at(i) != 23) continue;
+                    if (fabs(genps_id().at(i)) > 21) continue;
+                    LorentzVector thisParton_p4 = genps_p4().at(i);
+                    float thisParton_eta = thisParton_p4.eta();
+                    float thisParton_phi = thisParton_p4.phi();
+                    float thisPartonPhoton_dR = dR(thisParton_eta, bestMatch_eta, thisParton_phi, bestMatch_phi);
+                    if (thisPartonPhoton_dR < minPhotonParton_dR) {
+                        minPhotonParton_dR = thisPartonPhoton_dR;
+                    }
+                }
+            }
+        }
+    }
+
     // Retrieve products filled in loops, fill tree branches
 
     /* --> Photons <-- */
@@ -546,6 +603,14 @@ void mcTree::FillRecoBranches() {
         recoGamma_pt = bestPhoton_p4.pt();
         recoGamma_eta = bestPhoton_p4.eta();
         recoGamma_phi = bestPhoton_p4.phi();
+        // Best photon gen-reco match
+        if (!evt_isRealData()) {
+            genRecoGamma_isMatch = (bestMatch != -1) ? 1 : 0;
+        }
+        // Minimum gen photon-parton dR
+        if (minPhotonParton_dR != 999.) {
+            minGammaParton_dR = minPhotonParton_dR;
+        }
     }
 
     /* --> Leptons <-- */

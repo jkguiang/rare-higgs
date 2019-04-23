@@ -7,6 +7,7 @@ class mcTree {
     TBranch* b_run;
     TBranch* b_lumi;
     TBranch* b_event;
+    TBranch* b_scale1fb;
     TBranch* b_genRecoGamma_dR;
     TBranch* b_genRecoPhi_dR;
     TBranch* b_genRecoRho_dR;
@@ -95,6 +96,8 @@ class mcTree {
     TBranch* b_recoGamma_phi;
     TBranch* b_recoGamma_eta;
     TBranch* b_recoGamma_iso;
+    TBranch* b_genRecoGamma_isMatch;
+    TBranch* b_minGammaParton_dR;
     // Leptons
     TBranch* b_recoWLepton_id;
     TBranch* b_recoWLepton_pt;
@@ -110,6 +113,7 @@ class mcTree {
         int run;
         int lumi;
         int event;
+        float scale1fb;
         float genRecoGamma_dR;
         float genRecoPhi_dR;
         float genRecoRho_dR;
@@ -198,6 +202,8 @@ class mcTree {
         float recoGamma_phi;
         float recoGamma_eta;
         float recoGamma_iso;
+        int genRecoGamma_isMatch;
+        float minGammaParton_dR;
         // Leptons
         int recoWLepton_id;
         float recoWLepton_pt;
