@@ -23,7 +23,7 @@
 #include "CORE/Tools/datasetinfo/getDatasetInfo.h"
 
 // Header
-#include "RPGCORE/mcTree.h"
+#include "mcTree.h"
 
 // Namespaces
 using namespace std;
@@ -298,10 +298,10 @@ void mcTree::FillGenBranches() {
         decay = (daughters[W_to_MuNu].size() == 1) ? W_to_MuNu : W_to_ElNu;
         p4_sum -= p4_sum; // Reset p4 sum
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
-            // Get daughter index
+            // Get daughter
             int idx = daughters[decay].at(j);
-            // Get ID
             int id = genps_id().at(idx);
+            LorentzVector p4 = genps_p4().at(idx);
             // Skip neutrinos
             if (id == 14 || id == 12) {
                 continue;
@@ -309,10 +309,10 @@ void mcTree::FillGenBranches() {
             else {
                 // Fill leptons from W branches
                 genWLepton_id = id;
-                genWLepton_pt = genps_p4()[idx].pt();
-                genWLepton_eta = genps_p4()[idx].eta();
-                genWLepton_phi = genps_p4()[idx].phi();
-                p4_sum += genps_p4()[idx];
+                genWLepton_pt = p4.pt();
+                genWLepton_eta = p4.eta();
+                genWLepton_phi = p4.phi();
+                p4_sum += p4;
             }
         }
         genW_mass = p4_sum.M();
@@ -322,23 +322,24 @@ void mcTree::FillGenBranches() {
         decay = (daughters[H_to_PhiGamma].size() == 2) ? H_to_PhiGamma : H_to_RhoGamma;
         p4_sum -= p4_sum; // Reset p4 sum
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
-            // Get daughter index
+            // Get daughter
             int idx = daughters[decay].at(j);
-            // Get ID
             int id = genps_id().at(idx);
+            LorentzVector p4 = genps_p4().at(idx);
             // Fill photon branches
             if (id == 22) {
-                genGamma_pt = genps_p4()[idx].pt();
-                genGamma_eta = genps_p4()[idx].eta();
-                genGamma_phi = genps_p4()[idx].phi();
+                genGamma_pt = p4.pt();
+                genGamma_eta = p4.eta();
+                genGamma_phi = p4.phi();
+                p4_sum += p4;
             }
             else {
                 // Fill mesons from Higgs branches
                 genHiggsMeson_id = id;
-                genHiggsMeson_pt = genps_p4()[idx].pt();
-                genHiggsMeson_eta = genps_p4()[idx].eta();
-                genHiggsMeson_phi = genps_p4()[idx].phi();
-                p4_sum += genps_p4()[idx];
+                genHiggsMeson_pt = p4.pt();
+                genHiggsMeson_eta = p4.eta();
+                genHiggsMeson_phi = p4.phi();
+                p4_sum += p4;
             }
         }
         genHiggsMesonGamma_dR = dR(genHiggsMeson_phi, genGamma_phi, genHiggsMeson_eta, genGamma_eta);
@@ -349,22 +350,23 @@ void mcTree::FillGenBranches() {
         decay = Phi_to_KK;
         p4_sum -= p4_sum; // Reset p4 sum
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
-            // Get daughter index
+            // Get daughter
             int idx = daughters[decay].at(j);
-            // Get ID
             int id = genps_id().at(idx);
+            LorentzVector p4 = genps_p4().at(idx);
             // Fill Kaon from Phi branches
             if (id == 321) {
-                genKp_pt = genps_p4()[idx].pt();
-                genKp_phi = genps_p4()[idx].phi();
-                genKp_eta = genps_p4()[idx].eta();
+                genKp_pt = p4.pt();
+                genKp_phi = p4.phi();
+                genKp_eta = p4.eta();
+                p4_sum += p4;
             }
             else if (id == -321) {
-                genKm_pt = genps_p4()[idx].pt();
-                genKm_phi = genps_p4()[idx].phi();
-                genKm_eta = genps_p4()[idx].eta();
+                genKm_pt = p4.pt();
+                genKm_phi = p4.phi();
+                genKm_eta = p4.eta();
+                p4_sum += p4;
             }
-            p4_sum += genps_p4()[idx];
         }
         genKpKm_dR = dR(genKp_phi, genKm_phi, genKp_eta, genKm_eta);
         genHiggsMeson_mass = p4_sum.M();

@@ -209,7 +209,7 @@ class mcTree {
         float recoWLepton_pt;
         float recoWLepton_eta;
         float recoWLepton_phi;
-        float recoWLepton_nLep;
+        int recoWLepton_nLep;
 
         /* --> Methods <-- */
         // Constructor

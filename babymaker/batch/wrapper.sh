@@ -31,7 +31,7 @@ fi
 # Sets up CMSSW folder, cd into it
 eval `scramv1 project CMSSW $CMSSWVERSION`
 # Move files to CMSSW directory
-mv *.tar.xz *.py *.C *.so $CMSSWVERSION
+mv *.tar.xz $CMSSWVERSION
 # Move to CMSSW directory
 cd $CMSSWVERSION
 eval `scramv1 runtime -sh`
@@ -73,11 +73,6 @@ OUTPUT=skimmed.root
 echo "[wrapper] OUTPUT = " ${OUTPUT}
 
 # --> Clean-up <-- #
-# Set up destination directory
-if [ ! -d "${COPYDIR}" ]; then
-    echo "creating output directory " ${COPYDIR}
-    mkdir ${COPYDIR}
-fi
 # Copy output to destination
 COPY_SRC="file://`pwd`/${OUTPUT}"
 COPY_DEST="gsiftp://gftp.t2.ucsd.edu${COPYDIR}/output_${FILEID}.root"
