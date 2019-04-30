@@ -100,5 +100,49 @@ def WriteJSON(fname, bst, feature_names, class_labels=[]):
     with open(fname, "w") as fhout:
         json.dump(to_dump,fhout,indent=2)
 
+def JSONtoC(fname_in, fname_out=None):
+    with open(fname_in, "r") as fhin:
+        data = json.loads(fhin.read())
+        trees = data["trees"]
+        feature_names = data["feature_names"]
+        class_labels = data["class_labels"]
+    def get_leaf(entry, depth=0):
+        if "leaf" in entry: 
+            return entry["leaf"]
+        splitvar = entry["split"]
+        splitval = entry["split_condition"]
+        yesnode = [c for c in entry["children"] if c["nodeid"] == entry["yes"]][0]
+        nonode = [c for c in entry["children"] if c["nodeid"] == entry["no"]][0]
+        return "({} < {} ? {} : {})".format(splitvar, splitval, get_leaf(yesnode, depth=depth+1), get_leaf(nonode, depth=depth+1))
+    buff = ""
+    multi = False
+    if len(class_labels) > 0:
+        multi = True
+        ntrees_per_class = len(trees) // len(class_labels)
+        nclasses = len(class_labels)
+    if multi:
+        buff += "std::vector<float> get_prediction({}) {{\n".format(",".join(map(lambda x: "float {}".format(x), feature_names)))
+        for ic in class_labels:
+            buff += "  float w_{} = 0.;\n".format(ic)
+        for itree,j in enumerate(trees):
+            iclass = int(class_labels[itree % nclasses])
+            buff += "  w_{} += {};\n".format(iclass,get_leaf(j))
+        buff += "  float w_sum = {};\n".format("+".join("exp(w_{})".format(ic) for ic in class_labels))
+        for ic in class_labels:
+            buff += "  w_{0} = exp(w_{0})/w_sum;\n".format(ic)
+        buff += "  return {{ {} }};\n".format(",".join("w_{}".format(ic) for ic in class_labels))
+    else:
+        buff += "float get_prediction({}) {{\n".format(",".join(map(lambda x: "float {}".format(x), feature_names)))
+        buff += "  float w = 0.;\n"
+        for itree,j in enumerate(trees):
+            buff += "  w += {};\n".format(get_leaf(j))
+        buff += "  return 1.0/(1.0+exp(-1.0*w));\n"
+    buff += "}"
+    if fname_out:
+        with open(fname_out, "w") as fhout:
+            fhout.write(buff)
+    else:
+        return buff
+
 if __name__ == "__main__":
     GetData("outputs", verbose=True)
