@@ -57,11 +57,12 @@ class Validate():
         self.Stacked("recoKpKm_dR", 100,0,0.1, xLabel=r"$dR(K^{+}, K^{-})$", logY=True)
         self.Stacked("recoPipPim_dR", 100,0,0.1, xLabel=r"$dR(\pi^{+}, \pi^{-})$", logY=True)
         # Other Kinematics
-        self.Stacked("recoGamma_eta", 50,-2.5,2.5, xLabel=r"$\eta_{\gamma}$", logY=True, reWeight=0.01)
+        self.Stacked("recoGamma_eta", 50,-2.5,2.5, xLabel=r"$\eta_{\gamma}$", logY=True, sigWeight=0.01)
+        self.Stacked("recoGamma_pt", 100,0,200, xLabel=r"$p_{T,\gamma}$", logY=True)
 
         return
 
-    def Stacked(self, col, nBins, xMin, xMax, xLabel="", logY=False, reWeight=0.1):
+    def Stacked(self, col, nBins, xMin, xMax, xLabel="", logY=False, sigWeight=0.1):
         """ Make plot of stacked 1D histograms """
         bgsPlots = []
         sigPlots = []
@@ -72,7 +73,7 @@ class Validate():
             weights = df.loc[(df.scale1fb != -999) & (df[col] != -999), "scale1fb"].to_numpy()
             # Manually set signal scalef1b
             if name == self.signal and np.array_equal(weights, np.ones_like(weights)):
-                weights = 0.0*weights+reWeight
+                weights = 0.0*weights+sigWeight
             # Plot data
             thisPlot = Hist1D(data,label=name.split("_")[0], bins=np.linspace(xMin,xMax,nBins), weights=weights, color=self.colors[name])
             # Add plot to stack
