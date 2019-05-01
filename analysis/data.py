@@ -2,6 +2,8 @@
 import os, ast, json
 # Handling ROOT files
 import uproot, pandas as pd, numpy as np
+# Custom Tools
+from config import config
 
 def GetData(inDir, pklJar="pickles/", verbose=False):
     """ Return dictionary of Pandas dataframes """
@@ -34,8 +36,35 @@ def GetData(inDir, pklJar="pickles/", verbose=False):
         # Pickle dataframe
         if not pickled: data[name].to_pickle(pkl)
 
+    data = ModifyData(data)
+
     if verbose:
         print("Loaded Dataframes:\n    "+"\n    ".join(data.keys()))
+
+    return data
+
+def ModifyData(data):
+    """ Return modified dictionary of Pandas dataframes """
+    # Get list of sample names
+    samples = data.keys()
+    # Move signal name to front
+    samples.insert(0, samples.pop(samples.index(config["signal"])))
+    # Add bookkeeping columns, delete bad rows
+    for name, df in data.iteritems():
+        # Add signal bool and dataset name columns
+        df["stype"] = samples.index(name)
+        df["signal"] = (df["stype"] == 0)
+        # Require found lepton, photon, meson
+        df = df.drop(df.query("recoWLepton_pt < 0 or recoPhi_pt < 0 or recoRho_pt < 0 or recoGamma_pt < 0").index)
+        # Avoid double-counting prompt photons
+        genGammaMatch = ( df.genRecoGamma_isMatch == 1 )
+        minGammaParton = ( df.minGammaParton_dR > 0.4 )
+        if name in ["WGToLNuG", "TTGamma_SingleLeptFromT", "TTGamma_SingleLeptFromTbar"]:
+            df = df.drop(df.query("not @genGammaMatch or not @minGammaParton").index)
+        elif name in ["WJetsToLNu", "TTJets_SingleLeptFromT", "TTJets_SingleLeptFromTbar"]:
+            df = df.drop(df.query("@genGammaMatch and @minGammaParton").index)
+        # Update dataframe in dictionary
+        data[name] = df
 
     return data
 
