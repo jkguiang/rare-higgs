@@ -1,5 +1,4 @@
 // -*- C++ -*-
-
 // C++
 #include <iostream>
 #include <vector>
@@ -20,15 +19,24 @@
 #include "CORE/PhotonSelections.h"
 #include "CORE/IsolationTools.h"
 #include "CORE/TriggerSelections.h"
+#include "CORE/MetSelections.h"
+#include "CORE/Tools/JetCorrector.h"
+#include "CORE/Tools/jetcorr/FactorizedJetCorrector.h"
 #include "CORE/Tools/datasetinfo/getDatasetInfo.h"
 
 // Header
 #include "mcTree.h"
+#include "magicAngles.h"
 
 // Namespaces
 using namespace std;
 using namespace tas;
 
+/**
+ * Initialize TTree
+ * @params: none
+ * @return: none
+ */
 mcTree::mcTree() {
     /* --> TTree Setup <-- */
     t = new TTree("tree", "tree");
@@ -38,10 +46,21 @@ mcTree::mcTree() {
     b_lumi = t->Branch("lumi", &lumi, "lumi/I");
     b_event = t->Branch("event", &event, "event/I");
     b_scale1fb = t->Branch("scale1fb", &scale1fb, "scale1fb/F");
+    b_met_pt = t->Branch("met_pt", &met_pt, "met_pt/F"); 
+    b_met_phi = t->Branch("met_phi", &met_phi, "met_phi/F"); 
+    b_rawMet_pt = t->Branch("rawMet_pt", &rawMet_pt, "rawMet_pt/F"); 
+    b_rawMet_phi = t->Branch("rawMet_phi", &rawMet_phi, "rawMet_phi/F"); 
+    /* --> Special Branches Setup <-- */
     // Gen-Reco dR
     b_genRecoGamma_dR = t->Branch("genRecoGamma_dR", &genRecoGamma_dR, "genRecoGamma_dR/F");
     b_genRecoPhi_dR = t->Branch("genRecoPhi_dR", &genRecoPhi_dR, "genRecoPhi_dR/F");
     b_genRecoRho_dR = t->Branch("genRecoRho_dR", &genRecoRho_dR, "genRecoRho_dR/F");
+    // Magic Angles
+    b_recoMagAng_cosThetaStar = t->Branch("recoMagAng_cosThetaStar", &recoMagAng_cosThetaStar, "recoMagAng_cosThetaStar/F");
+    b_recoMagAng_cosTheta1 = t->Branch("recoMagAng_cosTheta1", &recoMagAng_cosTheta1, "recoMagAng_cosTheta1/F");
+    b_recoMagAng_cosTheta2 = t->Branch("recoMagAng_cosTheta2", &recoMagAng_cosTheta2, "recoMagAng_cosTheta2/F");
+    b_recoMagAng_Phi = t->Branch("recoMagAng_Phi", &recoMagAng_Phi, "recoMagAng_Phi/F");
+    b_recoMagAng_Phi1 = t->Branch("recoMagAng_Phi1", &recoMagAng_Phi1, "recoMagAng_Phi1/F");
     /* --> Gen Branches Setup <-- */
     // Gen W
     b_genW_pt = t->Branch("genW_pt", &genW_pt, "genW_pt/F");
@@ -87,38 +106,40 @@ mcTree::mcTree() {
     b_recoPhi_pt = t->Branch("recoPhi_pt", &recoPhi_pt, "recoPhi_pt/F");
     b_recoPhi_eta = t->Branch("recoPhi_eta", &recoPhi_eta, "recoPhi_eta/F");
     b_recoPhi_phi = t->Branch("recoPhi_phi", &recoPhi_phi, "recoPhi_phi/F");
-    b_recoPhi_iso = t->Branch("recoPhi_iso", &recoPhi_iso, "recoPhi_iso/F");
+    b_recoPhi_relIso = t->Branch("recoPhi_relIso", &recoPhi_relIso, "recoPhi_relIso/F");
+    b_recoPhiGamma_dR = t->Branch("recoPhiGamma_dR", &recoPhiGamma_dR, "recoPhiGamma_dR/F");
     // Reco K+, K-
     b_recoKm_pt = t->Branch("recoKm_pt", &recoKm_pt, "recoKm_pt/F");
     b_recoKm_eta = t->Branch("recoKm_eta", &recoKm_eta, "recoKm_eta/F");
     b_recoKm_phi = t->Branch("recoKm_phi", &recoKm_phi, "recoKm_phi/F");
-    b_recoKm_iso = t->Branch("recoKm_iso", &recoKm_iso, "recoKm_iso/F");
+    b_recoKm_relIso = t->Branch("recoKm_relIso", &recoKm_relIso, "recoKm_relIso/F");
     b_recoKp_pt = t->Branch("recoKp_pt", &recoKp_pt, "recoKp_pt/F");
     b_recoKp_eta = t->Branch("recoKp_eta", &recoKp_eta, "recoKp_eta/F");
     b_recoKp_phi = t->Branch("recoKp_phi", &recoKp_phi, "recoKp_phi/F");
-    b_recoKp_iso = t->Branch("recoKp_iso", &recoKp_iso, "recoKp_iso/F");
+    b_recoKp_relIso = t->Branch("recoKp_relIso", &recoKp_relIso, "recoKp_relIso/F");
     b_recoKpKm_dR = t->Branch("recoKpKm_dR", &recoKpKm_dR, "recoKpKm_dR/F");
     // Reco Rho
     b_recoRho_mass = t->Branch("recoRho_mass", &recoRho_mass, "recoRho_mass/F");
     b_recoRho_pt = t->Branch("recoRho_pt", &recoRho_pt, "recoRho_pt/F");
     b_recoRho_eta = t->Branch("recoRho_eta", &recoRho_eta, "recoRho_eta/F");
     b_recoRho_phi = t->Branch("recoRho_phi", &recoRho_phi, "recoRho_phi/F");
-    b_recoRho_iso = t->Branch("recoRho_iso", &recoRho_iso, "recoRho_iso/F");
+    b_recoRho_relIso = t->Branch("recoRho_relIso", &recoRho_relIso, "recoRho_relIso/F");
+    b_recoRhoGamma_dR = t->Branch("recoRhoGamma_dR", &recoRhoGamma_dR, "recoRhoGamma_dR/F");
     // Reco Pi+, Pi-
     b_recoPim_pt = t->Branch("recoPim_pt", &recoPim_pt, "recoPim_pt/F");
     b_recoPim_eta = t->Branch("recoPim_eta", &recoPim_eta, "recoPim_eta/F");
     b_recoPim_phi = t->Branch("recoPim_phi", &recoPim_phi, "recoPim_phi/F");
-    b_recoPim_iso = t->Branch("recoPim_iso", &recoPim_iso, "recoPim_iso/F");
+    b_recoPim_relIso = t->Branch("recoPim_relIso", &recoPim_relIso, "recoPim_relIso/F");
     b_recoPip_pt = t->Branch("recoPip_pt", &recoPip_pt, "recoPip_pt/F");
     b_recoPip_eta = t->Branch("recoPip_eta", &recoPip_eta, "recoPip_eta/F");
     b_recoPip_phi = t->Branch("recoPip_phi", &recoPip_phi, "recoPip_phi/F");
-    b_recoPip_iso = t->Branch("recoPip_iso", &recoPip_iso, "recoPip_iso/F");
+    b_recoPip_relIso = t->Branch("recoPip_relIso", &recoPip_relIso, "recoPip_relIso/F");
     b_recoPipPim_dR = t->Branch("recoPipPim_dR", &recoPipPim_dR, "recoPipPim_dR/F");
     // Reco Photons
     b_recoGamma_pt = t->Branch("recoGamma_pt", &recoGamma_pt, "recoGamma_pt/F");
     b_recoGamma_phi = t->Branch("recoGamma_phi", &recoGamma_phi, "recoGamma_phi/F");
     b_recoGamma_eta = t->Branch("recoGamma_eta", &recoGamma_eta, "recoGamma_eta/F");
-    b_recoGamma_iso = t->Branch("recoGamma_iso", &recoGamma_iso, "recoGamma_iso/F");
+    b_recoGamma_relIso = t->Branch("recoGamma_relIso", &recoGamma_relIso, "recoGamma_relIso/F");
     b_genRecoGamma_isMatch = t->Branch("genRecoGamma_isMatch", &genRecoGamma_isMatch, "genRecoGamma_isMatch/I");
     b_minGammaParton_dR = t->Branch("minGammaParton_dR", &minGammaParton_dR, "minGammaParton_dR/F");
     // Reco Leptons
@@ -129,15 +150,30 @@ mcTree::mcTree() {
     b_recoWLepton_nLep = t->Branch("recoWLepton_nLep", &recoWLepton_nLep, "recoWLepton_nLep/I");
 }
 
+/**
+ * Reset TTree branch values
+ * @params: none
+ * @return: none
+ */
 void mcTree::Reset() {
     // Meta
     run = -999;
     lumi = -999;
     event = -999;
     scale1fb = -999;
+    met_pt = -999; 
+    met_phi = -999;
+    rawMet_pt = -999;
+    rawMet_phi = -999;
+    // Special
     genRecoGamma_dR = -999;
     genRecoPhi_dR = -999;
     genRecoRho_dR = -999;
+    recoMagAng_cosThetaStar = -999;
+    recoMagAng_cosTheta1 = -999;
+    recoMagAng_cosTheta2 = -999;
+    recoMagAng_Phi = -999;
+    recoMagAng_Phi1 = -999;
     // Gen
     genW_pt = -999;
     genW_eta = -999;
@@ -174,34 +210,36 @@ void mcTree::Reset() {
     recoPhi_pt = -999;
     recoPhi_eta = -999;
     recoPhi_phi = -999;
-    recoPhi_iso = -999;
+    recoPhi_relIso = -999;
+    recoPhiGamma_dR = -999;
     recoKm_pt = -999;
     recoKm_eta = -999;
     recoKm_phi = -999;
-    recoKm_iso = -999;
+    recoKm_relIso = -999;
     recoKp_pt = -999;
     recoKp_eta = -999;
     recoKp_phi = -999;
-    recoKp_iso = -999;
+    recoKp_relIso = -999;
     recoKpKm_dR = -999;
     recoRho_mass = -999;
     recoRho_pt = -999;
     recoRho_eta = -999;
     recoRho_phi = -999;
-    recoRho_iso = -999;
+    recoRho_relIso = -999;
+    recoRhoGamma_dR = -999;
     recoPim_pt = -999; 
     recoPim_eta = -999;
     recoPim_phi = -999;
-    recoPim_iso = -999;
+    recoPim_relIso = -999;
     recoPip_pt = -999;
     recoPip_eta = -999;
     recoPip_phi = -999;
-    recoPip_iso = -999;
+    recoPip_relIso = -999;
     recoPipPim_dR = -999;
     recoGamma_pt = -999;
     recoGamma_phi = -999;
     recoGamma_eta = -999;
-    recoGamma_iso = -999;
+    recoGamma_relIso = -999;
     genRecoGamma_isMatch = -999;
     minGammaParton_dR = -999;
     recoWLepton_id = -999;
@@ -213,8 +251,12 @@ void mcTree::Reset() {
     return;
 }
 
+/**
+ * Get dR between two four-vectors
+ * @params: phi, eta from two four-momenta
+ * @return: dR value
+ */
 float mcTree::dR(float phi1, float phi2, float eta1, float eta2) {
-
     float dphi = abs(phi2 - phi1);
     if (dphi > M_PI){
         dphi = 2*M_PI - dphi;
@@ -222,6 +264,21 @@ float mcTree::dR(float phi1, float phi2, float eta1, float eta2) {
     return sqrt(pow((dphi), 2) + pow((eta2 - eta1), 2));
 }
 
+/**
+ * Make jet corrector from input files
+ * @params: vector of paths to jet correction .txt files
+ * @return: none
+ */
+void mcTree::MakeJetCorrector(vector<string> jetCorrector_files) {
+    jetCorrector = makeJetCorrector(jetCorrector_files);
+    return;
+}
+
+/**
+ * Fill relevant branches with gen-level information
+ * @params: none
+ * @return: none
+ */
 void mcTree::FillGenBranches() {
 
     // Decay mode tracking information
@@ -375,7 +432,21 @@ void mcTree::FillGenBranches() {
     return;
 }
 
+/**
+ * Fill relevant branches with reco information
+ * @params: none
+ * @return: none
+ */
 void mcTree::FillRecoBranches() {
+
+    /* --> Fill MET Branches <-- */
+    // Uncorrected
+    rawMet_pt = evt_pfmet();
+    rawMet_phi = evt_pfmetPhi();
+    // Corrected
+    pair<float, float> t1met = getT1CHSMET_fromMINIAOD(jetCorrector, 0, 0, false, 0);
+    met_pt = t1met.first;
+    met_phi = t1met.second;
 
     /* --> Mesons, Hadrons <-- */
     // Store K+, K- indexes
@@ -593,18 +664,18 @@ void mcTree::FillRecoBranches() {
 
     // Retrieve products filled in loops, fill tree branches
 
-    /* --> Photons <-- */
+    /* --> Fill Photons <-- */
     LorentzVector bestPhoton_p4; // Declare here, since used in following conditionals
     if (goodPhotons.size() > 0) {
         // Best Photon
         int bestPhoton_i = goodPhotons.at(bestPhoton);
         bestPhoton_p4 = photons_p4().at(bestPhoton_i);
-        // Best Photon isolation
-        recoGamma_iso = photons_recoChargedHadronIso().at(bestPhoton_i);
         // Best Photon kinematics
         recoGamma_pt = bestPhoton_p4.pt();
         recoGamma_eta = bestPhoton_p4.eta();
         recoGamma_phi = bestPhoton_p4.phi();
+        // Best Photon relative isolation
+        recoGamma_relIso = (photons_recoChargedHadronIso().at(bestPhoton_i))/(recoGamma_pt);
         // Best photon gen-reco match
         if (!evt_isRealData()) {
             genRecoGamma_isMatch = (bestMatch != -1) ? 1 : 0;
@@ -615,7 +686,8 @@ void mcTree::FillRecoBranches() {
         }
     }
 
-    /* --> Leptons <-- */
+    /* --> Fill Leptons <-- */
+    LorentzVector bestLepton_p4; // Declare here, since used in following conditionals
     if (goodLeptonIdxs.size() > 0) {
         // Number of 'good' leptons
         recoWLepton_nLep = goodLeptonIdxs.size();
@@ -623,13 +695,14 @@ void mcTree::FillRecoBranches() {
         recoWLepton_id = goodLeptonIDs.at(bestLepton);
         int bestLep_i = goodLeptonIdxs.at(bestLepton);
         // Best lepton kinematics
-        LorentzVector bestLepton_p4 = (recoWLepton_id == 11) ? els_p4().at(bestLep_i) : mus_p4().at(bestLep_i);
+        bestLepton_p4 = (recoWLepton_id == 11) ? els_p4().at(bestLep_i) : mus_p4().at(bestLep_i);
         recoWLepton_pt = bestLepton_p4.pt(); 
         recoWLepton_eta = bestLepton_p4.eta(); 
         recoWLepton_phi = bestLepton_p4.phi(); 
     }
 
-    /* --> Best Phi Candidate <-- */
+    /* --> Fill Best Phi Candidate <-- */
+    LorentzVector bestPhi_p4;
     if (mesonCandsFromK_mass.size() > 0) {
         // Best K+, K-
         int bestKp_i = mesonCands_posHadronIdx.at(bestPhiCand);
@@ -639,15 +712,7 @@ void mcTree::FillRecoBranches() {
         bestKp_p4.SetE(pow(bestKp_p4.P2()+pow(.493677,2), 0.5)); // Assumed by tracker to be a
         bestKm_p4.SetE(pow(bestKm_p4.P2()+pow(.493677,2), 0.5)); // Pi, so must manually set E 
         // Best Phi
-        LorentzVector bestPhi_p4 = bestKp_p4+bestKm_p4;
-        // Best Phi, K+, K- isolation
-        float bestKp_iso = pfcands_trackIso().at(bestKp_i);
-        float bestKm_iso = pfcands_trackIso().at(bestKm_i);
-        bestKp_iso = ((pfcands_dz().at(bestKm_i) >= 0 && pfcands_dz().at(bestKm_i) < 0.1) || pfcands_fromPV().at(bestKm_i) > 1) ? bestKp_iso - bestKm_p4.pt() : bestKp_iso;
-        bestKm_iso = ((pfcands_dz().at(bestKp_i) >= 0 && pfcands_dz().at(bestKp_i) < 0.1) || pfcands_fromPV().at(bestKp_i) > 1) ? bestKm_iso - bestKp_p4.pt() : bestKm_iso;
-        recoPhi_iso = max(bestKp_iso, bestKm_iso);
-        recoKp_iso = bestKp_iso;
-        recoKm_iso = bestKm_iso;
+        bestPhi_p4 = bestKp_p4+bestKm_p4;
         // Best Phi cand mass
         recoPhi_mass = mesonCandsFromK_mass.at(bestPhiCand);
         recoPhi_pt = bestPhi_p4.pt();
@@ -661,13 +726,22 @@ void mcTree::FillRecoBranches() {
         recoKm_phi = bestKm_p4.phi();
         recoKm_eta = bestKm_p4.eta();
         recoKpKm_dR = dR(recoKp_phi, recoKm_phi, recoKp_eta, recoKm_eta);
+        // Best Phi, K+, K- relative isolation
+        float bestKp_iso = pfcands_trackIso().at(bestKp_i);
+        float bestKm_iso = pfcands_trackIso().at(bestKm_i);
+        bestKp_iso = ((pfcands_dz().at(bestKm_i) >= 0 && pfcands_dz().at(bestKm_i) < 0.1) || pfcands_fromPV().at(bestKm_i) > 1) ? bestKp_iso - bestKm_p4.pt() : bestKp_iso;
+        bestKm_iso = ((pfcands_dz().at(bestKp_i) >= 0 && pfcands_dz().at(bestKp_i) < 0.1) || pfcands_fromPV().at(bestKp_i) > 1) ? bestKm_iso - bestKp_p4.pt() : bestKm_iso;
+        recoPhi_relIso = max(bestKp_iso, bestKm_iso)/recoPhi_pt;
+        recoKp_relIso = bestKp_iso/recoKp_pt;
+        recoKm_relIso = bestKm_iso/recoKm_pt;
         // Best Higgs cand mass
         if (goodPhotons.size() > 0) {
             recoHiggs_mass = (bestKp_p4+bestKm_p4+bestPhoton_p4).M();
+            recoPhiGamma_dR = dR(recoPhi_phi, recoGamma_phi, recoPhi_eta, recoGamma_eta);
         }
     }
 
-    /* --> Best Rho Candidate <-- */
+    /* --> Fill Best Rho Candidate <-- */
     if (mesonCandsFromPi_mass.size() > 0) {
         // Best Pi+, Pi-
         int bestPip_i = mesonCands_posHadronIdx.at(bestRhoCand);
@@ -676,14 +750,6 @@ void mcTree::FillRecoBranches() {
         LorentzVector bestPim_p4 = pfcands_p4().at(bestPim_i);
         // Best Rho
         LorentzVector bestRho_p4 = bestPip_p4+bestPim_p4;
-        // Best Rho, Pi+, Pi- isolation
-        float bestPip_iso = pfcands_trackIso().at(bestPip_i);
-        float bestPim_iso = pfcands_trackIso().at(bestPim_i);
-        bestPip_iso = ((pfcands_dz().at(bestPim_i) >= 0 && pfcands_dz().at(bestPim_i) < 0.1) || pfcands_fromPV().at(bestPim_i) > 1) ? bestPip_iso - bestPim_p4.pt() : bestPip_iso;
-        bestPim_iso = ((pfcands_dz().at(bestPip_i) >= 0 && pfcands_dz().at(bestPip_i) < 0.1) || pfcands_fromPV().at(bestPip_i) > 1) ? bestPim_iso - bestPip_p4.pt() : bestPim_iso;
-        recoRho_iso = max(bestPip_iso, bestPim_iso);
-        recoPip_iso = bestPip_iso;
-        recoPim_iso = bestPim_iso;
         // Best Rho cand mass
         recoRho_mass = mesonCandsFromPi_mass.at(bestRhoCand);
         recoRho_pt = bestRho_p4.pt();
@@ -697,10 +763,37 @@ void mcTree::FillRecoBranches() {
         recoPip_phi = bestPim_p4.phi();
         recoPim_eta = bestPim_p4.eta();
         recoPipPim_dR = dR(recoPip_phi, recoPim_phi, recoPip_eta, recoPim_eta);
+        // Best Rho, Pi+, Pi- relative isolation
+        float bestPip_iso = pfcands_trackIso().at(bestPip_i);
+        float bestPim_iso = pfcands_trackIso().at(bestPim_i);
+        bestPip_iso = ((pfcands_dz().at(bestPim_i) >= 0 && pfcands_dz().at(bestPim_i) < 0.1) || pfcands_fromPV().at(bestPim_i) > 1) ? bestPip_iso - bestPim_p4.pt() : bestPip_iso;
+        bestPim_iso = ((pfcands_dz().at(bestPip_i) >= 0 && pfcands_dz().at(bestPip_i) < 0.1) || pfcands_fromPV().at(bestPip_i) > 1) ? bestPim_iso - bestPip_p4.pt() : bestPim_iso;
+        recoRho_relIso = max(bestPip_iso, bestPim_iso)/recoRho_pt;
+        recoPip_relIso = bestPip_iso/recoPip_pt;
+        recoPim_relIso = bestPim_iso/recoPim_pt;
         // Best Higgs cand mass
         if (goodPhotons.size() > 0) {
             recoHiggs_mass = (bestPip_p4+bestPim_p4+bestPhoton_p4).M();
+            recoRhoGamma_dR = dR(recoRho_phi, recoGamma_phi, recoRho_eta, recoGamma_eta);
         }
+    }
+
+    /* --> Fill Magic Angles <-- */
+    if (goodPhotons.size() > 0 && goodLeptonIdxs.size() > 0 && mesonCandsFromK_mass.size() > 0) {
+        // Output from MELA
+        MagicAngles mAngles;
+        // Variables for MELA
+        TLorentzVector lep_p4(bestLepton_p4.Px(),bestLepton_p4.Py(),bestLepton_p4.Pz(),bestLepton_p4.E());
+        TLorentzVector mes_p4(bestPhi_p4.Px(),bestPhi_p4.Py(),bestPhi_p4.Pz(),bestPhi_p4.E());
+        TLorentzVector gam_p4(bestPhoton_p4.Px(),bestPhoton_p4.Py(),bestPhoton_p4.Pz(),bestPhoton_p4.E());
+        // Get magic angles
+        mAngles = getAngles(met_pt, met_phi, recoWLepton_id, lep_p4, mes_p4, gam_p4);
+        // Fill branches
+        recoMagAng_cosThetaStar = mAngles.angles[0];
+        recoMagAng_cosTheta1 = mAngles.angles[1];
+        recoMagAng_cosTheta2 = mAngles.angles[2];
+        recoMagAng_Phi = mAngles.angles[3];
+        recoMagAng_Phi1 = mAngles.angles[5];
     }
 
     // Save number of meson candidates
@@ -709,6 +802,11 @@ void mcTree::FillRecoBranches() {
     return;
 }
 
+/**
+ * Fill relevant branches with gen-reco information
+ * @params: none
+ * @return: none
+ */
 void mcTree::FillGenRecoBranches() {
     
     if (genGamma_pt != -999 && recoGamma_pt != -999) {

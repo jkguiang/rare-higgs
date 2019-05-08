@@ -19,6 +19,9 @@
 #include "CORE/MuonSelections.h"
 #include "CORE/IsolationTools.h"
 #include "CORE/TriggerSelections.h"
+#include "CORE/MetSelections.h"
+#include "CORE/Tools/JetCorrector.h"
+#include "CORE/Tools/jetcorr/FactorizedJetCorrector.h"
 #include "CORE/Tools/datasetinfo/getDatasetInfo.h"
 
 // Custom
@@ -37,22 +40,23 @@ int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose =
     TBenchmark *bmark = new TBenchmark();
     bmark->Start("benchmark");
 
+    /* --> Initialization <-- */
     // Initialize TFile
     TFile* f = new TFile(outName, "RECREATE");
-
     // Initialize TTree
     mcTree* mct = new mcTree();
     TTree* mctree = mct->t;
 
-    // Loop over events to Analyze
+    /* --> File Loop <-- */
+    // Get # events
     unsigned int nEventsTotal = 0;
     unsigned int nEventsChain = chain->GetEntries();
     if (nEvents >= 0) nEventsChain = nEvents;
+    // Get list of files
     TObjArray *listOfFiles = chain->GetListOfFiles();
     TIter fileIter(listOfFiles);
     TFile *currentFile = 0;
-
-    // File Loop
+    // Loop over files
     while ( (currentFile = (TFile*)fileIter.Next()) ) {
 
         // Get File Content
@@ -62,11 +66,19 @@ int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose =
         if (fast) tree->SetCacheSize(128*1024*1024);
         cms3.Init(tree);
 
+        // Collect jet correction files
+        vector<string> jetCorrector_files;
+        jetCorrector_files.push_back("jetCorrections/Autumn18_RunA_V8_DATA_L1FastJet_AK4PFchs.txt");
+        jetCorrector_files.push_back("jetCorrections/Autumn18_RunA_V8_DATA_L2Relative_AK4PFchs.txt");
+        jetCorrector_files.push_back("jetCorrections/Autumn18_RunA_V8_DATA_L3Absolute_AK4PFchs.txt");
+        jetCorrector_files.push_back("jetCorrections/Autumn18_RunA_V8_DATA_L2L3Residual_AK4PFchs.txt");
+        // Make jet corrector
+        mct->MakeJetCorrector(jetCorrector_files);
+
         // Loop over Events in current file
         if (nEventsTotal >= nEventsChain) continue;
         unsigned int nEventsTree = tree->GetEntriesFast();
         for (unsigned int event = 0; event < nEventsTree; ++event) {
-
 
             // Get Event Content
             if (nEventsTotal >= nEventsChain) continue;
@@ -78,19 +90,13 @@ int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose =
             CMS3::progress( nEventsTotal, nEventsChain );
 
             /* --> Start Analysis Code <-- */
-
             // Scale Factor
             double sf = 1.0;
-
-            // Missing Et
-            double met = evt_pfmet();
-
             // Is Signal
             bool isSignal = sampleName.Contains("WH_HtoRhoGammaPhiGamma");
 
             // Reset branch values
             mct->Reset();
-
             // Fill metadata branches
             mct->run = evt_run();
             mct->lumi = evt_lumiBlock();
@@ -110,7 +116,6 @@ int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose =
             mct->FillRecoBranches();
             // Fill gen-reco dR branches
             mct->FillGenRecoBranches();
-
             // Fill tree
             mctree->Fill();
 

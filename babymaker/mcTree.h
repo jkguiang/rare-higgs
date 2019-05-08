@@ -3,16 +3,26 @@
 
 class mcTree {
 
-    /* Meta TTree Branches */
+    /* --> Meta Branches <-- */
     TBranch* b_run;
     TBranch* b_lumi;
     TBranch* b_event;
     TBranch* b_scale1fb;
+    TBranch* b_met_pt;
+    TBranch* b_met_phi;
+    TBranch* b_rawMet_pt;
+    TBranch* b_rawMet_phi;
+    /* --> Special Branches <-- */
     TBranch* b_genRecoGamma_dR;
     TBranch* b_genRecoPhi_dR;
     TBranch* b_genRecoRho_dR;
+    TBranch* b_recoMagAng_cosThetaStar;
+    TBranch* b_recoMagAng_cosTheta1;
+    TBranch* b_recoMagAng_cosTheta2;
+    TBranch* b_recoMagAng_Phi;
+    TBranch* b_recoMagAng_Phi1;
 
-    /* --> Gen TTree Branches <-- */
+    /* --> Gen Branches <-- */
     // W Boson
     TBranch* b_genW_pt;
     TBranch* b_genW_eta;
@@ -50,7 +60,7 @@ class mcTree {
     // dR between Kaons
     TBranch* b_genKpKm_dR;
 
-    /* --> Reco TTree Branches <-- */
+    /* --> Reco Branches <-- */
     // Reconstructed Higgs
     TBranch* b_recoHiggs_mass;
     // Reconstructed Mesons
@@ -60,17 +70,18 @@ class mcTree {
     TBranch* b_recoPhi_pt;
     TBranch* b_recoPhi_eta;
     TBranch* b_recoPhi_phi;
-    TBranch* b_recoPhi_iso;
+    TBranch* b_recoPhi_relIso;
+    TBranch* b_recoPhiGamma_dR;
     // K- from Phi
     TBranch* b_recoKm_pt;
     TBranch* b_recoKm_eta;
     TBranch* b_recoKm_phi;
-    TBranch* b_recoKm_iso;
+    TBranch* b_recoKm_relIso;
     // K+ from Phi
     TBranch* b_recoKp_pt;
     TBranch* b_recoKp_eta;
     TBranch* b_recoKp_phi;
-    TBranch* b_recoKp_iso;
+    TBranch* b_recoKp_relIso;
     // dR between Kaons
     TBranch* b_recoKpKm_dR;
     // Reconstructed Rho
@@ -78,24 +89,25 @@ class mcTree {
     TBranch* b_recoRho_pt;
     TBranch* b_recoRho_eta;
     TBranch* b_recoRho_phi;
-    TBranch* b_recoRho_iso;
+    TBranch* b_recoRho_relIso;
+    TBranch* b_recoRhoGamma_dR;
     // Pi- from Rho
     TBranch* b_recoPim_pt; 
     TBranch* b_recoPim_eta;
     TBranch* b_recoPim_phi;
-    TBranch* b_recoPim_iso;
+    TBranch* b_recoPim_relIso;
     // Pi+ from Rho
     TBranch* b_recoPip_pt;
     TBranch* b_recoPip_eta;
     TBranch* b_recoPip_phi;
-    TBranch* b_recoPip_iso;
+    TBranch* b_recoPip_relIso;
     // dR between Pions
     TBranch* b_recoPipPim_dR;
     // Photons
     TBranch* b_recoGamma_pt;
     TBranch* b_recoGamma_phi;
     TBranch* b_recoGamma_eta;
-    TBranch* b_recoGamma_iso;
+    TBranch* b_recoGamma_relIso;
     TBranch* b_genRecoGamma_isMatch;
     TBranch* b_minGammaParton_dR;
     // Leptons
@@ -109,16 +121,29 @@ class mcTree {
         // TTree
         TTree* t;
 
-        /* --> Meta TTree Branch Values */
+        // Jet Corrector
+        FactorizedJetCorrector* jetCorrector;
+
+        /* --> Meta Branch Values <-- */
         int run;
         int lumi;
         int event;
         float scale1fb;
+        float met_pt;
+        float met_phi;
+        float rawMet_pt;
+        float rawMet_phi;
+        /* --> Special Branch Values <-- */
         float genRecoGamma_dR;
         float genRecoPhi_dR;
         float genRecoRho_dR;
+        float recoMagAng_cosThetaStar;
+        float recoMagAng_cosTheta1;
+        float recoMagAng_cosTheta2;
+        float recoMagAng_Phi;
+        float recoMagAng_Phi1;
 
-        /* --> Gen TTree Branch Values <-- */
+        /* --> Gen Branch Values <-- */
         // W Boson
         float genW_pt;
         float genW_eta;
@@ -156,7 +181,7 @@ class mcTree {
         // dR between Kaons
         float genKpKm_dR;
 
-        /* --> Reco TTree Branch Values <-- */
+        /* --> Reco Branch Values <-- */
         // Reconstructed Higgs
         float recoHiggs_mass;
         // Reconstructed Phi
@@ -164,17 +189,18 @@ class mcTree {
         float recoPhi_pt;
         float recoPhi_eta;
         float recoPhi_phi;
-        float recoPhi_iso;
+        float recoPhi_relIso;
+        float recoPhiGamma_dR;
         // K- from Phi
         float recoKm_pt;
         float recoKm_eta;
         float recoKm_phi;
-        float recoKm_iso;
+        float recoKm_relIso;
         // K+ from Phi
         float recoKp_pt;
         float recoKp_eta;
         float recoKp_phi;
-        float recoKp_iso;
+        float recoKp_relIso;
         // dR between Kaons
         float recoKpKm_dR;
         // Reconstructed Mesons
@@ -184,24 +210,25 @@ class mcTree {
         float recoRho_pt;
         float recoRho_eta;
         float recoRho_phi;
-        float recoRho_iso;
+        float recoRho_relIso;
+        float recoRhoGamma_dR;
         // Pi- from Rho
         float recoPim_pt; 
         float recoPim_eta;
         float recoPim_phi;
-        float recoPim_iso;
+        float recoPim_relIso;
         // Pi+ from Rho
         float recoPip_pt;
         float recoPip_eta;
         float recoPip_phi;
-        float recoPip_iso;
+        float recoPip_relIso;
         // dR between Pions
         float recoPipPim_dR;
         // Photons
         float recoGamma_pt;
         float recoGamma_phi;
         float recoGamma_eta;
-        float recoGamma_iso;
+        float recoGamma_relIso;
         int genRecoGamma_isMatch;
         float minGammaParton_dR;
         // Leptons
@@ -216,9 +243,15 @@ class mcTree {
         mcTree();
         // Reset Vars
         void Reset();
+        // Get dR
         float dR(float, float, float, float);
+        // Make Jet Corrector
+        void MakeJetCorrector(vector<string>);
+        // Fill gen-level branches
         void FillGenBranches();
+        // Fill reco branches
         void FillRecoBranches();
+        // Fill gen-reco branches
         void FillGenRecoBranches();
 };
 
