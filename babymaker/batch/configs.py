@@ -92,7 +92,7 @@ samples_2016 = {
 
 if __name__ == "__main__":
     project = "rare-higgs"
-    tag = "v2-0-0"
+    tag = "v3-0-0"
     for i in range(0,2):
         test = bool(i)
         print("Making 2018{}config files...".format(" test " if test else " "))
