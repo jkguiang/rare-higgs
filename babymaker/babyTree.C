@@ -1,4 +1,5 @@
 // -*- C++ -*-
+
 // C++
 #include <iostream>
 #include <vector>
@@ -12,7 +13,7 @@
 #include "TTreeCache.h"
 #include "TString.h"
 
-// CMS3
+// CORE
 #include "CORE/CMS3.h"
 #include "CORE/ElectronSelections.h"
 #include "CORE/MuonSelections.h"
@@ -20,12 +21,15 @@
 #include "CORE/IsolationTools.h"
 #include "CORE/TriggerSelections.h"
 #include "CORE/MetSelections.h"
+
+// Tools
 #include "CORE/Tools/JetCorrector.h"
+#include "CORE/Tools/goodrun.h"
 #include "CORE/Tools/jetcorr/FactorizedJetCorrector.h"
 #include "CORE/Tools/datasetinfo/getDatasetInfo.h"
 
-// Header
-#include "mcTree.h"
+// Custom
+#include "babyTree.h"
 #include "magicAngles.h"
 
 // Namespaces
@@ -37,7 +41,7 @@ using namespace tas;
  * @params: none
  * @return: none
  */
-mcTree::mcTree() {
+BabyTree::BabyTree() {
     /* --> TTree Setup <-- */
     t = new TTree("tree", "tree");
     /* --> Meta Branches Setup <-- */
@@ -46,10 +50,18 @@ mcTree::mcTree() {
     b_lumi = t->Branch("lumi", &lumi, "lumi/I");
     b_event = t->Branch("event", &event, "event/I");
     b_scale1fb = t->Branch("scale1fb", &scale1fb, "scale1fb/F");
+    b_isGold = t->Branch("isGold", &isGold, "isGold/I");
+    b_isHEM = t->Branch("isHEM", &isHEM, "isHEM/I");
+    // MET
     b_met_pt = t->Branch("met_pt", &met_pt, "met_pt/F"); 
     b_met_phi = t->Branch("met_phi", &met_phi, "met_phi/F"); 
     b_rawMet_pt = t->Branch("rawMet_pt", &rawMet_pt, "rawMet_pt/F"); 
-    b_rawMet_phi = t->Branch("rawMet_phi", &rawMet_phi, "rawMet_phi/F"); 
+    b_rawMet_phi = t->Branch("rawMet_phi", &rawMet_phi, "rawMet_phi/F");
+    // Triggers
+    b_HLT_singleMu = t->Branch("HLT_singleMu", &HLT_singleMu, "HLT_singleMu/I"); 
+    b_HLT_singleEl = t->Branch("HLT_singleEl", &HLT_singleEl, "HLT_singleEl/I"); 
+    // Filters
+    b_passFilters = t->Branch("passFilters", &passFilters, "passFilters/I");
     /* --> Special Branches Setup <-- */
     // Gen-Reco dR
     b_genRecoGamma_dR = t->Branch("genRecoGamma_dR", &genRecoGamma_dR, "genRecoGamma_dR/F");
@@ -148,6 +160,7 @@ mcTree::mcTree() {
     b_recoWLepton_eta = t->Branch("recoWLepton_eta", &recoWLepton_eta, "recoWLepton_eta/F");
     b_recoWLepton_phi = t->Branch("recoWLepton_phi", &recoWLepton_phi, "recoWLepton_phi/F");
     b_recoWLepton_nLep = t->Branch("recoWLepton_nLep", &recoWLepton_nLep, "recoWLepton_nLep/I");
+    b_recoGammaWLepton_dR = t->Branch("recoGammaWLepton_dR", &recoGammaWLepton_dR, "recoGammaWLepton_dR/F");
 }
 
 /**
@@ -155,16 +168,21 @@ mcTree::mcTree() {
  * @params: none
  * @return: none
  */
-void mcTree::Reset() {
+void BabyTree::Reset() {
     // Meta
     run = -999;
     lumi = -999;
     event = -999;
     scale1fb = -999;
+    isGold = -999;
+    isHEM = -999;
     met_pt = -999; 
     met_phi = -999;
     rawMet_pt = -999;
     rawMet_phi = -999;
+    HLT_singleMu = -999; 
+    HLT_singleEl = -999; 
+    passFilters = -999;
     // Special
     genRecoGamma_dR = -999;
     genRecoPhi_dR = -999;
@@ -252,11 +270,84 @@ void mcTree::Reset() {
 }
 
 /**
+ * Fill config struct from sample name
+ * @params: sample name
+ * @return: none
+ */
+void BabyTree::MakeConfig(TString sample) {
+    // Get year, determine if data or MC
+    config.isData = (sample.Contains("Run20"));
+    if (config.isData) {
+        if (sample.Contains("Run2016")) config.year = 2016;
+        else if (sample.Contains("Run2017")) config.year = 2017;
+        else if (sample.Contains("Run2018")) config.year = 2018;
+    }
+    else if (sample.Contains("RunIISummer16") && sample.Contains("94X")) config.year = 2016;
+    else if (sample.Contains("RunIIFall17") && sample.Contains("94X")) config.year = 2017;
+    else if (sample.Contains("RunIIAutumn18") && sample.Contains("102X")) config.year = 2018;
+    // Set CORE global year variable
+    gconf.year = config.year;
+    gconf.ea_version = (config.year == 2016) ? 1 : 3;
+    // Get intergrated lumi
+    config.lumi = (config.year == 2016) ? 35.92 : (config.year == 2017) ? 41.53 : 59.74;
+    // Get golden JSON
+    if (config.year == 2016) config.json = "jsons/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON_snt.txt";
+    if (config.year == 2017) config.json = "jsons/Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON_v1_snt.txt";
+    if (config.year == 2018) config.json = "jsons/Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON_snt.txt";
+    // Get JEC tag for dynamic file collection
+    string jecTag, jecEra;
+    if (config.year == 2018) {
+        if (config.isData) {
+            if (sample.Contains("Run2018A")) jecEra = "RunA";
+            else if (sample.Contains("Run2018B")) jecEra = "RunB";
+            else if (sample.Contains("Run2018C")) jecEra = "RunC";
+            else if (sample.Contains("Run2018D")) jecEra = "RunD";
+            jecTag = "Autumn18_"+jecEra+"_V8_DATA";
+        }
+        else jecTag = "Autumn18_V8_MC";
+    }
+    if (config.year == 2017) {
+        if (config.isData) {
+            if (sample.Contains("2017B")) jecEra = "17Nov2017B";
+            else if (sample.Contains("2017C")) jecEra = "17Nov2017C";
+            else if (sample.Contains("2017D")) jecEra = "17Nov2017DE";
+            else if (sample.Contains("2017E")) jecEra = "17Nov2017DE";
+            else if (sample.Contains("2017F")) jecEra = "17Nov2017F";
+            jecTag = "Fall17_"+jecEra+"_V32_DATA";
+        }
+        else jecTag = "Fall17_17Nov2017_V32_MC";
+    }
+    if (config.year == 2016) {
+        if (config.isData) {
+            if (sample.Contains("Run2016B")) jecEra = "07Aug2017BCD";
+            else if (sample.Contains("Run2016C")) jecEra = "07Aug2017BCD";
+            else if (sample.Contains("Run2016D")) jecEra = "07Aug2017BCD";
+            else if (sample.Contains("Run2016E")) jecEra = "07Aug2017EF";
+            else if (sample.Contains("Run2016F")) jecEra = "07Aug2017EF";
+            else if (sample.Contains("Run2016G")) jecEra = "07Aug2017GH";
+            else if (sample.Contains("Run2016H")) jecEra = "07Aug2017GH";
+            jecTag = "Summer16_"+jecEra+"_V11_DATA";
+        }
+        else jecTag = "Summer16_07Aug2017_V11_MC";
+    }
+    cout << "JEC Tag: " << jecTag << endl;
+    // Collect jet correction files
+    vector<string> jetCorr_files;
+    jetCorr_files.push_back("jetCorrections/"+jecTag+"_L1FastJet_AK4PFchs.txt");
+    jetCorr_files.push_back("jetCorrections/"+jecTag+"_L2Relative_AK4PFchs.txt");
+    jetCorr_files.push_back("jetCorrections/"+jecTag+"_L3Absolute_AK4PFchs.txt");
+    jetCorr_files.push_back("jetCorrections/"+jecTag+"_L2L3Residual_AK4PFchs.txt");
+    // Make jet corrector
+    config.jetCorr = makeJetCorrector(jetCorr_files);
+    return;
+}
+
+/**
  * Get dR between two four-vectors
  * @params: phi, eta from two four-momenta
  * @return: dR value
  */
-float mcTree::dR(float phi1, float phi2, float eta1, float eta2) {
+float BabyTree::dR(float phi1, float phi2, float eta1, float eta2) {
     float dphi = abs(phi2 - phi1);
     if (dphi > M_PI){
         dphi = 2*M_PI - dphi;
@@ -265,21 +356,11 @@ float mcTree::dR(float phi1, float phi2, float eta1, float eta2) {
 }
 
 /**
- * Make jet corrector from input files
- * @params: vector of paths to jet correction .txt files
- * @return: none
- */
-void mcTree::MakeJetCorrector(vector<string> jetCorrector_files) {
-    jetCorrector = makeJetCorrector(jetCorrector_files);
-    return;
-}
-
-/**
  * Fill relevant branches with gen-level information
  * @params: none
  * @return: none
  */
-void mcTree::FillGenBranches() {
+void BabyTree::FillGenBranches() {
 
     // Decay mode tracking information
     enum modes { H_to_PhiGamma = 0, H_to_RhoGamma = 1, H_to_KKGamma = 2, Phi_to_KK = 3, W_to_ElNu = 4, W_to_MuNu = 5 };
@@ -359,18 +440,12 @@ void mcTree::FillGenBranches() {
             int idx = daughters[decay].at(j);
             int id = genps_id().at(idx);
             LorentzVector p4 = genps_p4().at(idx);
-            // Skip neutrinos
-            if (id == 14 || id == 12) {
-                continue;
-            }
-            else {
-                // Fill leptons from W branches
-                genWLepton_id = id;
-                genWLepton_pt = p4.pt();
-                genWLepton_eta = p4.eta();
-                genWLepton_phi = p4.phi();
-                p4_sum += p4;
-            }
+            // Fill leptons from W branches
+            genWLepton_id = id;
+            genWLepton_pt = p4.pt();
+            genWLepton_eta = p4.eta();
+            genWLepton_phi = p4.phi();
+            p4_sum += p4;
         }
         genW_mass = p4_sum.M();
     }
@@ -437,14 +512,14 @@ void mcTree::FillGenBranches() {
  * @params: none
  * @return: none
  */
-void mcTree::FillRecoBranches() {
+void BabyTree::FillRecoBranches() {
 
-    /* --> Fill MET Branches <-- */
+    /* --> Fill MET <-- */
     // Uncorrected
     rawMet_pt = evt_pfmet();
     rawMet_phi = evt_pfmetPhi();
     // Corrected
-    pair<float, float> t1met = getT1CHSMET_fromMINIAOD(jetCorrector, 0, 0, false, 0);
+    pair<float, float> t1met = getT1CHSMET_fromMINIAOD(config.jetCorr, 0, 0, false, 0);
     met_pt = t1met.first;
     met_phi = t1met.second;
 
@@ -542,51 +617,6 @@ void mcTree::FillRecoBranches() {
         } // END Loop over meson cands from Pi -------------
     }
 
-    /* --> Leptons <-- */
-    vector<int> goodLeptonIdxs;
-    vector<int> goodLeptonIDs;
-    // START Loop over electrons ---------------------------
-    for (unsigned int i = 0; i < els_p4().size(); i++) {
-        // Define cuts for readability
-        bool elsPtCut = (els_p4().at(i).pt() > 20);
-        bool elsEtaCut = (els_p4().at(i).eta() < 2.4);
-        bool elsIDCut = (isMediumElectronPOGfall17noIso_v2(i));
-        bool elsIsoCut = (elMiniRelIsoCMS3_EA(i, 3) < 0.1);
-        // Store 'good' electrons
-        if (elsPtCut && elsEtaCut && elsIDCut && elsIsoCut) {
-            goodLeptonIdxs.push_back(i);
-            goodLeptonIDs.push_back(11);
-        }
-    } // END Loop over electrons ---------------------------
-
-    // START Loop over muons -------------------------------
-    for (unsigned int i = 0; i < mus_p4().size(); i++) {
-        // Define cuts for readability
-        bool musPtCut = (mus_p4().at(i).pt() > 20);
-        bool musEtaCut = (mus_p4().at(i).eta() < 2.4);
-        bool musIDCut = (isMediumMuonPOG(i));
-        bool musIsoCut = (muMiniRelIsoCMS3_EA(i, 3) < 0.2);
-        // Store 'good' muons
-        if (musPtCut && musEtaCut && musIDCut && musIsoCut) {
-            goodLeptonIdxs.push_back(i); 
-            goodLeptonIDs.push_back(13); 
-        }
-    } // END Loop over muons -------------------------------
-
-    // Find best (highest Pt) lepton, should usually only be one to choose from
-    int bestLepton = 0;
-    for (unsigned int i = 0; i < goodLeptonIdxs.size(); i++) {
-        int tl = goodLeptonIdxs.at(i);
-        int bl = goodLeptonIdxs.at(bestLepton);
-        LorentzVector thisLepton_p4 = (goodLeptonIDs.at(i) == 11) ? els_p4().at(tl) : mus_p4().at(tl);
-        float thisLepton_pt = thisLepton_p4.pt();
-        LorentzVector bestLepton_p4 = (goodLeptonIDs.at(bestLepton) == 11) ? els_p4().at(bl) : mus_p4().at(bl);
-        float bestLepton_pt = bestLepton_p4.pt();
-        if (thisLepton_pt > bestLepton_pt) {
-            bestLepton = i;
-        }
-    }
-
     /* --> Photons <-- */
     vector<int> goodPhotons;
     // START Loop over photons -----------------------------
@@ -596,11 +626,21 @@ void mcTree::FillRecoBranches() {
         // Define cuts for readability
         bool photonPtCut = (photon_pt > 20);
         bool photonEtaCut = (abs(photon_p4.eta()) < 2.5);
-        // bool photonLooseIDCut  = isLoosePhoton(i, analysis_t::HAD, 3);
-        bool photonTightIDCut  = isTightPhoton(i, analysis_t::HAD, 3);
+        bool photonTightIDCut = (config.year == 2016) ? isMediumPhotonPOG_Spring16(i) : isMediumPhotonPOG_Fall17V2(i);
         bool photonIsoCut = (photons_recoChargedHadronIso().at(i)/photon_pt < 0.06);
         // Store 'good' photons
-        if (photonPtCut && photonEtaCut && photonTightIDCut && photonIsoCut) goodPhotons.push_back(i);
+        if (photonPtCut && photonEtaCut && photonTightIDCut && photonIsoCut) {
+            // Check for overlap
+            bool isOverlap = false;
+            for (unsigned int j = 0; j < els_p4().size(); j++) {
+                if (els_p4().at(j).pt() > 10) {
+                    LorentzVector el_p4 = els_p4().at(j);
+                    isOverlap = dR(photon_p4.phi(), el_p4.phi(), photon_p4.eta(), el_p4.eta()) < 0.2;
+                    if (isOverlap) break;
+                }
+            }
+            if (!isOverlap) goodPhotons.push_back(i);
+        }
     } // END Loop over photons -----------------------------
 
     // Find best (highest Pt) photon
@@ -662,19 +702,62 @@ void mcTree::FillRecoBranches() {
         }
     }
 
-    // Retrieve products filled in loops, fill tree branches
+    /* --> Leptons <-- */
+    vector<int> goodLeptonIdxs;
+    vector<int> goodLeptonIDs;
+    // START Loop over electrons ---------------------------
+    for (unsigned int i = 0; i < els_p4().size(); i++) {
+        // Define cuts for readability
+        bool elsPtCut = (els_p4().at(i).pt() > 20);
+        bool elsEtaCut = (els_p4().at(i).eta() < 2.4);
+        bool elsIDCut = (electronID(i,id_level_t::HAD_veto_noiso_v5));
+        bool elsIsoCut = (elMiniRelIsoCMS3_EA(i, gconf.ea_version) < 0.1);
+        // Store 'good' electrons
+        if (elsPtCut && elsEtaCut && elsIDCut && elsIsoCut) {
+            goodLeptonIdxs.push_back(i);
+            goodLeptonIDs.push_back(11);
+        }
+    } // END Loop over electrons ---------------------------
+
+    // START Loop over muons -------------------------------
+    for (unsigned int i = 0; i < mus_p4().size(); i++) {
+        // Define cuts for readability
+        bool musPtCut = (mus_p4().at(i).pt() > 20);
+        bool musEtaCut = (mus_p4().at(i).eta() < 2.4);
+        bool musIDCut = (isMediumMuonPOG(i));
+        bool musIsoCut = (muMiniRelIsoCMS3_EA(i, gconf.ea_version) < 0.2);
+        // Store 'good' muons
+        if (musPtCut && musEtaCut && musIDCut && musIsoCut) {
+            goodLeptonIdxs.push_back(i); 
+            goodLeptonIDs.push_back(13); 
+        }
+    } // END Loop over muons -------------------------------
+
+    // Find best (highest Pt) lepton, should usually only be one to choose from
+    int bestLepton = 0;
+    for (unsigned int i = 0; i < goodLeptonIdxs.size(); i++) {
+        int tl = goodLeptonIdxs.at(i);
+        int bl = goodLeptonIdxs.at(bestLepton);
+        LorentzVector thisLepton_p4 = (goodLeptonIDs.at(i) == 11) ? els_p4().at(tl) : mus_p4().at(tl);
+        float thisLepton_pt = thisLepton_p4.pt();
+        LorentzVector bestLepton_p4 = (goodLeptonIDs.at(bestLepton) == 11) ? els_p4().at(bl) : mus_p4().at(bl);
+        float bestLepton_pt = bestLepton_p4.pt();
+        if (thisLepton_pt > bestLepton_pt) {
+            bestLepton = i;
+        }
+    }
 
     /* --> Fill Photons <-- */
     LorentzVector bestPhoton_p4; // Declare here, since used in following conditionals
     if (goodPhotons.size() > 0) {
-        // Best Photon
+        // Best photon
         int bestPhoton_i = goodPhotons.at(bestPhoton);
         bestPhoton_p4 = photons_p4().at(bestPhoton_i);
-        // Best Photon kinematics
+        // Best photon kinematics
         recoGamma_pt = bestPhoton_p4.pt();
         recoGamma_eta = bestPhoton_p4.eta();
         recoGamma_phi = bestPhoton_p4.phi();
-        // Best Photon relative isolation
+        // Best photon relative isolation
         recoGamma_relIso = (photons_recoChargedHadronIso().at(bestPhoton_i))/(recoGamma_pt);
         // Best photon gen-reco match
         if (!evt_isRealData()) {
@@ -699,10 +782,12 @@ void mcTree::FillRecoBranches() {
         recoWLepton_pt = bestLepton_p4.pt(); 
         recoWLepton_eta = bestLepton_p4.eta(); 
         recoWLepton_phi = bestLepton_p4.phi(); 
+        // dR(photon, lepton)
+        recoGammaWLepton_dR = dR(recoGamma_phi, recoWLepton_phi, recoGamma_eta, recoWLepton_eta);
     }
 
     /* --> Fill Best Phi Candidate <-- */
-    LorentzVector bestPhi_p4;
+    LorentzVector bestPhi_p4; // Declare here, since used in following conditionals
     if (mesonCandsFromK_mass.size() > 0) {
         // Best K+, K-
         int bestKp_i = mesonCands_posHadronIdx.at(bestPhiCand);
@@ -742,6 +827,7 @@ void mcTree::FillRecoBranches() {
     }
 
     /* --> Fill Best Rho Candidate <-- */
+    LorentzVector bestRho_p4; // Declare here, since used in following conditionals
     if (mesonCandsFromPi_mass.size() > 0) {
         // Best Pi+, Pi-
         int bestPip_i = mesonCands_posHadronIdx.at(bestRhoCand);
@@ -749,7 +835,7 @@ void mcTree::FillRecoBranches() {
         LorentzVector bestPip_p4 = pfcands_p4().at(bestPip_i);
         LorentzVector bestPim_p4 = pfcands_p4().at(bestPim_i);
         // Best Rho
-        LorentzVector bestRho_p4 = bestPip_p4+bestPim_p4;
+        bestRho_p4 = bestPip_p4+bestPim_p4;
         // Best Rho cand mass
         recoRho_mass = mesonCandsFromPi_mass.at(bestRhoCand);
         recoRho_pt = bestRho_p4.pt();
@@ -796,8 +882,43 @@ void mcTree::FillRecoBranches() {
         recoMagAng_Phi1 = mAngles.angles[5];
     }
 
-    // Save number of meson candidates
+    /* --> Fill nCands <-- */
     recoMeson_nCands = mesonCandsFromK_mass.size(); // number of cands from K, pi are the same
+
+    /* --> Fill Triggers <-- */
+    // Single muon
+    HLT_singleMu = passHLTTriggerPattern("HLT_IsoMu17_eta2p1_v") ||
+                   passHLTTriggerPattern("HLT_IsoMu20_v") || passHLTTriggerPattern("HLT_IsoMu20_eta2p1_v") ||
+                   passHLTTriggerPattern("HLT_IsoTkMu20_v") || passHLTTriggerPattern("HLT_IsoTkMu20_eta2p1_v") ||
+                   passHLTTriggerPattern("HLT_IsoMu24_v") || passHLTTriggerPattern("HLT_IsoTkMu24_v") || passHLTTriggerPattern("HLT_IsoMu24_eta2p1_v") ||
+                   passHLTTriggerPattern("HLT_IsoMu27_v") || passHLTTriggerPattern("HLT_IsoTkMu27_v");
+    // Single electron
+    HLT_singleEl = passHLTTriggerPattern("HLT_Ele27_eta2p1_WPTight_Gsf_v") || // 2016
+                   passHLTTriggerPattern("HLT_Ele32_eta2p1_WPTight_Gsf_v") || // 2016
+                   passHLTTriggerPattern("HLT_Ele27_WPTight_Gsf_v") ||
+                   passHLTTriggerPattern("HLT_Ele32_WPTight_Gsf_v") ||  // 2017,18
+                   passHLTTriggerPattern("HLT_Ele35_WPTight_Gsf_v") ||  // 2017,18
+                   passHLTTriggerPattern("HLT_Ele38_WPTight_Gsf_v") ||  // 2017,18
+                   passHLTTriggerPattern("HLT_Ele28_eta2p1_WPTight_Gsf_HT150_v"); // 2016
+
+    /* --> Fill Filters <-- */
+    // Define variable flags
+    bool Flag_ecalBadCalib = (config.year == 2016) ? true : filt_ecalBadCalibFilterUpdate(); // 2017, 2018
+    bool Flag_eeBadSc = (config.isData) ? filt_eeBadSc() : true; // Data only
+    // Check flags
+    passFilters = filt_goodVertices() && filt_globalSuperTightHalo2016() && filt_hbheNoise() && 
+                  filt_hbheNoiseIso() && filt_ecalTP() && filt_BadPFMuonFilter() &&
+                  Flag_ecalBadCalib && Flag_eeBadSc;
+
+    /* --> Fill HEM <-- */
+    isHEM = 0;
+    if (config.year == 2018) {
+        if ((config.isData && run >= 319077) || (!config.isData && event % 1961 < 1286)) {
+            bool photon_inRegion = (goodPhotons.size() > 0 && (recoGamma_eta >= -4.7 && recoGamma_eta <= -1.4) && (recoGamma_phi >= -1.6 && recoGamma_phi <= -0.8));
+            bool electron_inRegion = (abs(recoWLepton_id) == abs(11) && (recoWLepton_eta >= -4.7 && recoWLepton_eta <= -1.4) && (recoWLepton_phi >= -1.6 && recoWLepton_phi <= -0.8));
+            if (photon_inRegion || electron_inRegion) isHEM = 1;
+        }
+    }
 
     return;
 }
@@ -807,7 +928,7 @@ void mcTree::FillRecoBranches() {
  * @params: none
  * @return: none
  */
-void mcTree::FillGenRecoBranches() {
+void BabyTree::FillGenRecoBranches() {
     
     if (genGamma_pt != -999 && recoGamma_pt != -999) {
         genRecoGamma_dR = dR(genGamma_phi, recoGamma_phi, genGamma_eta, recoGamma_eta);

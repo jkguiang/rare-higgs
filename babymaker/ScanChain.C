@@ -13,19 +13,23 @@
 #include "TTreeCache.h"
 #include "TString.h"
 
-// CMS3
+// CORE
 #include "CORE/CMS3.h"
 #include "CORE/ElectronSelections.h"
 #include "CORE/MuonSelections.h"
+#include "CORE/PhotonSelections.h"
 #include "CORE/IsolationTools.h"
 #include "CORE/TriggerSelections.h"
 #include "CORE/MetSelections.h"
+
+// Tools
 #include "CORE/Tools/JetCorrector.h"
+#include "CORE/Tools/goodrun.h"
 #include "CORE/Tools/jetcorr/FactorizedJetCorrector.h"
 #include "CORE/Tools/datasetinfo/getDatasetInfo.h"
 
 // Custom
-#include "mcTree.h"
+#include "babyTree.h"
 
 // Namespaces
 using namespace std;
@@ -44,8 +48,12 @@ int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose =
     // Initialize TFile
     TFile* f = new TFile(outName, "RECREATE");
     // Initialize TTree
-    mcTree* mct = new mcTree();
-    TTree* mctree = mct->t;
+    BabyTree* bbt = new BabyTree();
+    bbt->MakeConfig(sampleName);
+    TTree* bbtree = bbt->t;
+    Config bbtconf = bbt->config;
+    // Golden JSON
+    if (bbtconf.isData) set_goodrun_file(bbtconf.json);
 
     /* --> File Loop <-- */
     // Get # events
@@ -65,15 +73,6 @@ int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose =
         if (fast) TTreeCache::SetLearnEntries(10);
         if (fast) tree->SetCacheSize(128*1024*1024);
         cms3.Init(tree);
-
-        // Collect jet correction files
-        vector<string> jetCorrector_files;
-        jetCorrector_files.push_back("jetCorrections/Autumn18_RunA_V8_DATA_L1FastJet_AK4PFchs.txt");
-        jetCorrector_files.push_back("jetCorrections/Autumn18_RunA_V8_DATA_L2Relative_AK4PFchs.txt");
-        jetCorrector_files.push_back("jetCorrections/Autumn18_RunA_V8_DATA_L3Absolute_AK4PFchs.txt");
-        jetCorrector_files.push_back("jetCorrections/Autumn18_RunA_V8_DATA_L2L3Residual_AK4PFchs.txt");
-        // Make jet corrector
-        mct->MakeJetCorrector(jetCorrector_files);
 
         // Loop over Events in current file
         if (nEventsTotal >= nEventsChain) continue;
@@ -96,28 +95,30 @@ int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose =
             bool isSignal = sampleName.Contains("WH_HtoRhoGammaPhiGamma");
 
             // Reset branch values
-            mct->Reset();
+            bbt->Reset();
             // Fill metadata branches
-            mct->run = evt_run();
-            mct->lumi = evt_lumiBlock();
-            mct->event = evt_event();
-            if (isSignal) {
-                // No sf for signal
-                mct->scale1fb = 1;
+            bbt->run = evt_run();
+            bbt->lumi = evt_lumiBlock();
+            bbt->event = evt_event();
+            if (bbtconf.isData) bbt->isGold = (goodrun(bbt->run, bbt->lumi)) ? 1 : 0;
+            else bbt->isGold = 1; // Set to 1 for MC always
+            if (!bbtconf.isData) {
+                if (isSignal) bbt->scale1fb = 1.0;
+                else {
+                    const string datasetName = cms3.evt_dataset().at(0).Data();
+                    TString cms3_version = cms3.evt_CMS3tag().at(0);
+                    bbt->scale1fb = datasetInfoFromFile.getScale1fbFromFile(datasetName, cms3_version.Data())*bbtconf.lumi;
+                }
             }
-            else {
-                const string datasetName = cms3.evt_dataset().at(0).Data();
-                TString cms3_version = cms3.evt_CMS3tag().at(0);
-                mct->scale1fb = datasetInfoFromFile.getScale1fbFromFile(datasetName, cms3_version.Data());
-            }
+            else bbt->scale1fb = 1.0;
             // Fill gen branches
-            if (isSignal) mct->FillGenBranches();
+            if (isSignal) bbt->FillGenBranches();
             // Fill reco branches
-            mct->FillRecoBranches();
+            bbt->FillRecoBranches();
             // Fill gen-reco dR branches
-            mct->FillGenRecoBranches();
+            bbt->FillGenRecoBranches();
             // Fill tree
-            mctree->Fill();
+            bbtree->Fill();
 
             /* --> END Analysis Code <-- */
         }
@@ -132,7 +133,7 @@ int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose =
   
     // Write tree
     f->cd();
-    mctree->Write();
+    bbtree->Write();
     f->Close();
 
     // return

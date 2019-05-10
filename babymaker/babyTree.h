@@ -1,17 +1,30 @@
 #ifndef MCTREE_H
 #define MCTREE_H
 
-class mcTree {
+struct Config {
+    int year;
+    float lumi;
+    bool isData;
+    TString json;
+    FactorizedJetCorrector* jetCorr;
+};
+
+class BabyTree {
 
     /* --> Meta Branches <-- */
     TBranch* b_run;
     TBranch* b_lumi;
     TBranch* b_event;
     TBranch* b_scale1fb;
+    TBranch* b_isGold;
+    TBranch* b_isHEM;
     TBranch* b_met_pt;
     TBranch* b_met_phi;
     TBranch* b_rawMet_pt;
     TBranch* b_rawMet_phi;
+    TBranch* b_HLT_singleMu; 
+    TBranch* b_HLT_singleEl; 
+    TBranch* b_passFilters;
     /* --> Special Branches <-- */
     TBranch* b_genRecoGamma_dR;
     TBranch* b_genRecoPhi_dR;
@@ -116,23 +129,29 @@ class mcTree {
     TBranch* b_recoWLepton_eta;
     TBranch* b_recoWLepton_phi;
     TBranch* b_recoWLepton_nLep;
+    TBranch* b_recoGammaWLepton_dR;
 
     public:
         // TTree
         TTree* t;
 
-        // Jet Corrector
-        FactorizedJetCorrector* jetCorrector;
+        // Config Struct
+        Config config;
 
         /* --> Meta Branch Values <-- */
         int run;
         int lumi;
         int event;
         float scale1fb;
+        int isGold;
+        int isHEM;
         float met_pt;
         float met_phi;
         float rawMet_pt;
         float rawMet_phi;
+        int HLT_singleMu; 
+        int HLT_singleEl; 
+        int passFilters;
         /* --> Special Branch Values <-- */
         float genRecoGamma_dR;
         float genRecoPhi_dR;
@@ -154,6 +173,7 @@ class mcTree {
         float genWLepton_pt;
         float genWLepton_eta;
         float genWLepton_phi;                                                             
+        float recoGammaWLepton_dR;
         // Higgs Boson
         float genHiggs_pt;
         float genHiggs_eta;
@@ -240,13 +260,13 @@ class mcTree {
 
         /* --> Methods <-- */
         // Constructor
-        mcTree();
+        BabyTree();
         // Reset Vars
         void Reset();
         // Get dR
         float dR(float, float, float, float);
-        // Make Jet Corrector
-        void MakeJetCorrector(vector<string>);
+        // Fill config struct
+        void MakeConfig(TString);
         // Fill gen-level branches
         void FillGenBranches();
         // Fill reco branches
