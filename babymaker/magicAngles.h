@@ -9,9 +9,9 @@
 #include "TLorentzRotation.h"
 
 /* Disclaimer:
- * This file is comprised of code written by 12 contributers, formost
- * among them being Ulascan Sarica.The original repo for this work can 
- * be found here:
+ * This file is comprised of code written by 12 contributers, foremost
+ * among them being Ulascan Sarica. The original repo containing their
+ * work can be found here:
  * https://github.com/cms-analysis/HiggsAnalysis-ZZMatrixElement
  *
  * This standalone file was compiled by Nick Amin
@@ -456,76 +456,80 @@ void computeVHAngles(
   m2 = (jet1massless + jet2massless).M();
 }
 
+/* Disclaimer (continued):
+ * The code below was written by Jonathan Guiang
+ */
+
 struct MagicAngles {
     float angles[7];
 };
 
 MagicAngles getAngles(float met_pt, float met_phi, int lep_id, TLorentzVector lep_p4, TLorentzVector mes_p4, TLorentzVector gam_p4) {
-        // Known neutrino 3-momentum components
-        float p_vx = met_pt*cos(met_phi);
-        float p_vy = met_pt*sin(met_phi);
-        // Best lepton 3-momentum
-        float p_lx = lep_p4.Px();
-        float p_ly = lep_p4.Py();
-        float p_lz = lep_p4.Pz();
-        float E_l = pow(pow(p_lx, 2)+pow(p_ly, 2)+pow(p_lz, 2), 0.5); // m_l ~ 0
-        // Mass of W-boson
-        float m = 80.379;
-        // Terms of quadratic equation solutions for p_vz
-        float a = ( pow(E_l,2) - pow(p_lz,2) );
-        float b = ( -p_lz*pow(m,2) - 2*p_lx*p_lz*p_vx - 2*p_ly*p_lz*p_vy );
-        float c = ( pow(E_l,2)*pow(p_vy,2) - pow(p_ly,2)*pow(p_vy,2) - pow(m,2)*p_ly*p_vy + pow(E_l,2)*pow(p_vx,2) - pow(p_lx,2)*pow(p_vx,2) - pow(m,2)*p_lx*p_vx -2*p_lx*p_ly*p_vx*p_vy - pow(m,4)/4 );
-        float disc = ( pow(b, 2) - 4*a*c );
-        // Determine p_vz
-        float p_vz = 0.0;
-        if (disc > 0) {
-            float quad_p = (-b+pow(disc, 0.5))/(2*a);
-            float quad_m = (-b-pow(disc, 0.5))/(2*a);
-            p_vz = (abs(quad_p) < abs(quad_m)) ? quad_p : quad_m;
-        }
-        // MELA output params
-        float costhetastar = -999;
-        float costheta1 = -999;
-        float costheta2 = -999;
-        float Phi = -999;
-        float Phi1 = -999;
-        float m1 = -999;
-        float m2 = -999;
-        // MELA input params
-        TLorentzVector neu_p4(p_vx, p_vy, p_vz, pow(pow(p_vx, 2)+pow(p_vy, 2)+pow(p_vz, 2), 0.5)); // m_v ~ 0
-        TLorentzVector dummy(0,0,0,0);
-        TLorentzVector jet1 = (lep_id > 0) ? lep_p4 : neu_p4;
-        int jet1Id = (lep_id > 0) ? lep_id : -lep_id+1;
-        TLorentzVector jet2 = (lep_id > 0) ? neu_p4 : lep_p4;
-        int jet2Id = (lep_id > 0) ? -lep_id-1 : lep_id;
-        // Get angles
-        computeVHAngles(
-                costhetastar,
-                costheta1,
-                costheta2,
-                Phi,
-                Phi1,
-                m1,
-                m2,
-                mes_p4, 23,
-                dummy, -9000,
-                gam_p4, 23,
-                dummy, -9000,
-                jet1, jet1Id,
-                jet2, jet2Id,
-                nullptr, -9000,
-                nullptr, -9000
-                );
+    // Known neutrino 3-momentum components
+    float p_vx = met_pt*cos(met_phi);
+    float p_vy = met_pt*sin(met_phi);
+    // Best lepton 3-momentum
+    float p_lx = lep_p4.Px();
+    float p_ly = lep_p4.Py();
+    float p_lz = lep_p4.Pz();
+    float E_l = pow(pow(p_lx, 2)+pow(p_ly, 2)+pow(p_lz, 2), 0.5); // m_l ~ 0
+    // Mass of W-boson
+    float m = 80.379;
+    // Terms of quadratic equation solutions for p_vz
+    float a = ( pow(E_l,2) - pow(p_lz,2) );
+    float b = ( -p_lz*pow(m,2) - 2*p_lx*p_lz*p_vx - 2*p_ly*p_lz*p_vy );
+    float c = ( pow(E_l,2)*pow(p_vy,2) - pow(p_ly,2)*pow(p_vy,2) - pow(m,2)*p_ly*p_vy + pow(E_l,2)*pow(p_vx,2) - pow(p_lx,2)*pow(p_vx,2) - pow(m,2)*p_lx*p_vx -2*p_lx*p_ly*p_vx*p_vy - pow(m,4)/4 );
+    float disc = ( pow(b, 2) - 4*a*c );
+    // Determine p_vz
+    float p_vz = 0.0;
+    if (disc > 0) {
+        float quad_p = (-b+pow(disc, 0.5))/(2*a);
+        float quad_m = (-b-pow(disc, 0.5))/(2*a);
+        p_vz = (abs(quad_p) < abs(quad_m)) ? quad_p : quad_m;
+    }
+    // MELA output params
+    float costhetastar = -999;
+    float costheta1 = -999;
+    float costheta2 = -999;
+    float Phi = -999;
+    float Phi1 = -999;
+    float m1 = -999;
+    float m2 = -999;
+    // MELA input params
+    TLorentzVector neu_p4(p_vx, p_vy, p_vz, pow(pow(p_vx, 2)+pow(p_vy, 2)+pow(p_vz, 2), 0.5)); // m_v ~ 0
+    TLorentzVector dummy(0,0,0,0);
+    TLorentzVector jet1 = (lep_id > 0) ? lep_p4 : neu_p4;
+    int jet1Id = (lep_id > 0) ? lep_id : -lep_id+1;
+    TLorentzVector jet2 = (lep_id > 0) ? neu_p4 : lep_p4;
+    int jet2Id = (lep_id > 0) ? -lep_id-1 : lep_id;
+    // Get angles
+    computeVHAngles(
+            costhetastar,
+            costheta1,
+            costheta2,
+            Phi,
+            Phi1,
+            m1,
+            m2,
+            mes_p4, 23,
+            dummy, -9000,
+            gam_p4, 23,
+            dummy, -9000,
+            jet1, jet1Id,
+            jet2, jet2Id,
+            nullptr, -9000,
+            nullptr, -9000
+            );
 
-        // Fill return struct
-        MagicAngles mAngles;
-        mAngles.angles[0] = costhetastar;
-        mAngles.angles[1] = costheta1;
-        mAngles.angles[2] = costheta2;
-        mAngles.angles[3] = Phi;
-        mAngles.angles[4] = Phi1;
-        mAngles.angles[5] = m1;
-        mAngles.angles[6] = m2;
+    // Fill return struct
+    MagicAngles mAngles;
+    mAngles.angles[0] = costhetastar;
+    mAngles.angles[1] = costheta1;
+    mAngles.angles[2] = costheta2;
+    mAngles.angles[3] = Phi;
+    mAngles.angles[4] = Phi1;
+    mAngles.angles[5] = m1;
+    mAngles.angles[6] = m2;
 
-        return mAngles;
+    return mAngles;
 }

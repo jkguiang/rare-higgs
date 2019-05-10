@@ -6,6 +6,6 @@ fi
 
 tar -hcJf package.tar.xz \
     ../CORE/*.h ../CORE/Tools/*.h ../CORE/Tools/jetcorr/*.h ../CORE/Tools/datasetinfo/*.h ../CMS3_CORE.so \
-    ../ScanChain.C ../mcTree.h ../mcTree.C ../magicAngles.h \
+    ../ScanChain.C ../babyTree.h ../babyTree.C ../magicAngles.h \
     ../copyTree.py ../doAll.py \
-    ../jetCorrections/* \
+    ../jetCorrections/* ../jsons/* \
