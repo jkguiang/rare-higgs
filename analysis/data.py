@@ -1,5 +1,5 @@
 # General imports
-import os, ast, json
+import os, ast, json, re
 # Handling ROOT files
 import uproot, pandas as pd, numpy as np
 # Custom Tools
@@ -18,42 +18,45 @@ def GetData(inDir, pklJar="pickles/", verbose=False):
         inDir += "/"
     if pklJar[-1] != "/":
         pklJar += "/"
+    ver = inDir.split("/")[-2]
+    ver_re = re.compile("v.-.-.")
+    if not re.match(ver_re, ver):
+        print("ERROR: {} is not versioned correctly.".format(inDir))
+        return
     # Make dictionary of dataframes
     data = {}
     for output in os.listdir(inDir):
         # Get file name
+        name_re = re.compile("output_*")
+        if not re.match(name_re, output): continue
         name = (output.split("output_")[-1]).split(".")[0]
         # Pickle file
-        pkl = pklJar+name+".pkl"
+        pkl = "{0}/{1}/{2}.pkl".format(pklJar, ver, name)
         pickled = os.path.isfile(pkl)
         # Open file, save dataframe
-        if not pickled:
-            f=uproot.open(inDir+output) # TFile
-            t=f["tree"] # TTree
-            data[name] = t.pandas.df() # dataframe
-        else:
-            data[name] = pd.read_pickle(pkl)
-        # Pickle dataframe
-        if not pickled: data[name].to_pickle(pkl)
+        if "data" not in output:
+            if not pickled:
+                f=uproot.open(inDir+output) # TFile
+                t=f["tree"] # TTree
+                data[name] = t.pandas.df() # dataframe
+            else:
+                data[name] = pd.read_pickle(pkl, compression="gzip")
+                # Pickle dataframe
+                if not pickled: data[name].to_pickle(pkl, compression="gzip")
 
     data = ModifyData(data)
 
     if verbose:
-        print("Loaded Dataframes:\n    "+"\n    ".join(data.keys()))
+        print("Loaded Dataframes (Version {}):\n    ".format(ver)+"\n    ".join(data.keys()))
 
     return data
 
 def ModifyData(data):
     """ Return modified dictionary of Pandas dataframes """
-    # Get list of sample names
-    samples = data.keys()
-    # Move signal name to front
-    samples.insert(0, samples.pop(samples.index(config["signal"])))
     # Add bookkeeping columns, delete bad rows
     for name, df in data.iteritems():
         # Add signal bool and dataset name columns
-        df["stype"] = samples.index(name)
-        df["signal"] = (df["stype"] == 0)
+        df["name"] = name
         # Require found lepton, photon, meson
         df = df.drop(df.query("recoWLepton_pt < 0 or recoPhi_pt < 0 or recoRho_pt < 0 or recoGamma_pt < 0").index)
         # Avoid double-counting prompt photons
@@ -130,6 +133,7 @@ def WriteJSON(fname, bst, feature_names, class_labels=[]):
         json.dump(to_dump,fhout,indent=2)
 
 def JSONtoC(fname_in, fname_out=None):
+    """ Return C Function that gives BDT output (Written by Nick Amin) """
     with open(fname_in, "r") as fhin:
         data = json.loads(fhin.read())
         trees = data["trees"]
@@ -174,4 +178,4 @@ def JSONtoC(fname_in, fname_out=None):
         return buff
 
 if __name__ == "__main__":
-    GetData("outputs", verbose=True)
+    GetData("/nfs-7/userdata/jguiang/rare-higgs/2017/v3-0-0", pklJar="pickles/2018", verbose=True)
