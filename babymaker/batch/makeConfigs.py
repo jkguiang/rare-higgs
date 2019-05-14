@@ -24,6 +24,7 @@ def MakeConfigs(year, sample, project, name, test=False, tag="", verbose=True):
 
     # Write config file
     outFile = "configs/{0}config_{1}.cmd".format("test_" if test else "", name)
+    if os.path.isfile(outFile) and verbose: print("Overwriting {}".format(outFile))
     with open(outFile, 'w') as fout:
         # Get credentials
         x509file = subprocess.check_output(["find","/tmp/", "-maxdepth", "1", "-type", "f", "-user", user, "-regex", "^.*x509.*$"])
