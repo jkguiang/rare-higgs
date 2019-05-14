@@ -34,6 +34,8 @@ class BabyTree {
     TBranch* b_recoMagAng_cosTheta2;
     TBranch* b_recoMagAng_Phi;
     TBranch* b_recoMagAng_Phi1;
+    TBranch* b_recoMagAng_m1;
+    TBranch* b_recoMagAng_m2;
 
     /* --> Gen Branches <-- */
     // W Boson
@@ -161,6 +163,8 @@ class BabyTree {
         float recoMagAng_cosTheta2;
         float recoMagAng_Phi;
         float recoMagAng_Phi1;
+        float recoMagAng_m1;
+        float recoMagAng_m2;
 
         /* --> Gen Branch Values <-- */
         // W Boson

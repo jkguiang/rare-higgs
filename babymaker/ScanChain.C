@@ -52,7 +52,7 @@ int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose =
     bbt->MakeConfig(sampleName);
     TTree* bbtree = bbt->t;
     Config bbtconf = bbt->config;
-    // Golden JSON
+    // Initialize Golden JSON for data
     if (bbtconf.isData) set_goodrun_file(bbtconf.json);
 
     /* --> File Loop <-- */
