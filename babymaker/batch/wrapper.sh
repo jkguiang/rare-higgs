@@ -61,16 +61,53 @@ echo "[wrapper] running: python doAll.py $INFILE"
 python doAll.py $INFILE
 
 # --> Output <-- #
+# Rigorous sweeproot which checks ALL branches for ALL events.
+# If GetEntry() returns -1, then there was an I/O problem, so we will delete it
+cat > rigorousSweepRoot.py << EOL
+import ROOT as r
+import os, sys
+f1 = r.TFile("output.root")
+if not f1 or not f1.IsOpen() or f1.IsZombie():
+    print "[RSR] removing zombie output.root because it does not deserve to live"
+    os.system("rm output.root")
+    sys.exit()
+t = f1.Get("tree")
+if type(t)==type(r.TObject()):
+    print "[RSR] no tree named 'tree' in file! Deleting."
+    os.system("rm output.root")
+    sys.exit()
+print "[RSR] ntuple has %i events" % t.GetEntries()
+foundBad = False
+for i in range(0,t.GetEntries(),1):
+    if t.GetEntry(i) < 0:
+        foundBad = True
+        print "[RSR] found bad event %i" % i
+        break
+if foundBad:
+    print "[RSR] removing output.root because it does not deserve to live"
+    os.system("rm output.root")
+else:
+    print "[RSR] passed the rigorous sweeproot"
+EOL
+date +%s
+echo "[wrapper] running rigorousSweepRoot.py"
+python rigorousSweepRoot.py
+date +%s
 # Log output
 echo "[wrapper] output is"
 ls -lh
 # Skim output
 echo "[wrapper] skimming output"
-python copyTree.py output.root skimmed.root -1 0 "tree" "recoMeson_nCands > 0"
-# Mark output to be copied
-echo "[wrapper] copying file"
-OUTPUT=skimmed.root
-echo "[wrapper] OUTPUT = " ${OUTPUT}
+if [[ -f output.root ]]; then
+    python copyTree.py output.root skimmed.root -1 0 "tree" "recoMeson_nCands > 0"
+    # Mark output to be copied
+    echo "[wrapper] copying file"
+    OUTPUT=skimmed.root
+    echo "[wrapper] OUTPUT = " ${OUTPUT}
+else
+    echo "[wrapper] output.root does not exist"
+    exit 0
+fi
 
 # --> Clean-up <-- #
 # Copy output to destination
