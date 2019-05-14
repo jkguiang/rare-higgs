@@ -480,13 +480,12 @@ MagicAngles getAngles(float met_pt, float met_phi, int lep_id, TLorentzVector le
     float b = ( -p_lz*pow(m,2) - 2*p_lx*p_lz*p_vx - 2*p_ly*p_lz*p_vy );
     float c = ( pow(E_l,2)*pow(p_vy,2) - pow(p_ly,2)*pow(p_vy,2) - pow(m,2)*p_ly*p_vy + pow(E_l,2)*pow(p_vx,2) - pow(p_lx,2)*pow(p_vx,2) - pow(m,2)*p_lx*p_vx -2*p_lx*p_ly*p_vx*p_vy - pow(m,4)/4 );
     float disc = ( pow(b, 2) - 4*a*c );
+    if (disc < 0) disc = 0.0;
     // Determine p_vz
     float p_vz = 0.0;
-    if (disc > 0) {
-        float quad_p = (-b+pow(disc, 0.5))/(2*a);
-        float quad_m = (-b-pow(disc, 0.5))/(2*a);
-        p_vz = (abs(quad_p) < abs(quad_m)) ? quad_p : quad_m;
-    }
+    float quad_p = (-b+pow(disc, 0.5))/(2*a);
+    float quad_m = (-b-pow(disc, 0.5))/(2*a);
+    p_vz = (abs(quad_p) < abs(quad_m)) ? quad_p : quad_m;
     // MELA output params
     float costhetastar = -999;
     float costheta1 = -999;
