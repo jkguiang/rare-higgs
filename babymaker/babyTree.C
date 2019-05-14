@@ -73,6 +73,8 @@ BabyTree::BabyTree() {
     b_recoMagAng_cosTheta2 = t->Branch("recoMagAng_cosTheta2", &recoMagAng_cosTheta2, "recoMagAng_cosTheta2/F");
     b_recoMagAng_Phi = t->Branch("recoMagAng_Phi", &recoMagAng_Phi, "recoMagAng_Phi/F");
     b_recoMagAng_Phi1 = t->Branch("recoMagAng_Phi1", &recoMagAng_Phi1, "recoMagAng_Phi1/F");
+    b_recoMagAng_m1 = t->Branch("recoMagAng_m1", &recoMagAng_m1, "recoMagAng_m1/F");
+    b_recoMagAng_m2 = t->Branch("recoMagAng_m2", &recoMagAng_m2, "recoMagAng_m2/F");
     /* --> Gen Branches Setup <-- */
     // Gen W
     b_genW_pt = t->Branch("genW_pt", &genW_pt, "genW_pt/F");
@@ -192,6 +194,8 @@ void BabyTree::Reset() {
     recoMagAng_cosTheta2 = -999;
     recoMagAng_Phi = -999;
     recoMagAng_Phi1 = -999;
+    recoMagAng_m1 = -999;
+    recoMagAng_m2 = -999;
     // Gen
     genW_pt = -999;
     genW_eta = -999;
@@ -282,6 +286,7 @@ void BabyTree::MakeConfig(TString sample) {
         else if (sample.Contains("Run2017")) config.year = 2017;
         else if (sample.Contains("Run2018")) config.year = 2018;
     }
+    else if (sample.Contains("WH_HtoRhoGammaPhiGamma")) config.year = 2018;
     else if (sample.Contains("RunIISummer16") && sample.Contains("94X")) config.year = 2016;
     else if (sample.Contains("RunIIFall17") && sample.Contains("94X")) config.year = 2017;
     else if (sample.Contains("RunIIAutumn18") && sample.Contains("102X")) config.year = 2018;
@@ -626,7 +631,7 @@ void BabyTree::FillRecoBranches() {
         // Define cuts for readability
         bool photonPtCut = (photon_pt > 20);
         bool photonEtaCut = (abs(photon_p4.eta()) < 2.5);
-        bool photonTightIDCut = (config.year == 2016) ? isMediumPhotonPOG_Spring16(i) : isMediumPhotonPOG_Fall17V2(i);
+        bool photonTightIDCut = isMediumPhotonPOG_Fall17V2(i);
         bool photonIsoCut = (photons_recoChargedHadronIso().at(i)/photon_pt < 0.06);
         // Store 'good' photons
         if (photonPtCut && photonEtaCut && photonTightIDCut && photonIsoCut) {
@@ -879,7 +884,9 @@ void BabyTree::FillRecoBranches() {
         recoMagAng_cosTheta1 = mAngles.angles[1];
         recoMagAng_cosTheta2 = mAngles.angles[2];
         recoMagAng_Phi = mAngles.angles[3];
-        recoMagAng_Phi1 = mAngles.angles[5];
+        recoMagAng_Phi1 = mAngles.angles[4];
+        recoMagAng_m1 = mAngles.angles[5];
+        recoMagAng_m2 = mAngles.angles[6];
     }
 
     /* --> Fill nCands <-- */
