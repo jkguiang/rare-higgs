@@ -3,12 +3,13 @@ import json
 import numpy as np
 import uproot
 import pandas as pd
+import pickle
 # Machine Learning
 from sklearn.metrics import roc_curve
 import xgboost as xgb # BDT
 # Custom
 from plots import Plots
-from tools import GetData, CombineYears
+from tools import GetData, CombineYears, ScaleByCol
 from config import config
 
 class Analysis(Plots):
@@ -21,26 +22,26 @@ class Analysis(Plots):
     Attributes
     ----------
     __preds : dict{ str: numpy.ndarray }
-        dictionary of BDT predictions organized by sample
+        Dictionary of dataframes indexed by sample name
     bst : xgboost.core.Booster 
-        pre-trained BDT
+        Pre-trained BDT
     features : list
-        list of features used to train BDT
+        List of features used to train BDT
     verbose : bool
-        verbosity of module (default False)
+        Verbosity of module (default False)
 
     Methods
     -------
-    _initDfs()
-        Prepare dataframes for BST cut
-    BestBDTCut()
+    Predict()
+        Generate BDT predictions for all dataframes
+    BestBDTCut(x_test, preds_test, window="")
         Calculate optimal BDT working point from testing data       
-    MakeBDTCut(bdtCut=None)
+    MakeBDTCut(bdtCut)
         Make cut on BDT variable, update dataframes
     """
 
     # Private
-    self.__preds = {}
+    __preds = {}
 
     def __init__(self, config, dfs, bst, features, **kwargs):
         """
@@ -49,11 +50,11 @@ class Analysis(Plots):
         config : dict
             Configuration for analysis
         dfs : dict{ str: pandas.DataFrame }
-            Dataframe used for testing BDT
-        bst : xgboost.core.Booster 
-            pre-trained BDT
-        features : list
-            list of features used to train BDT
+            Dictionary of dataframes indexed by sample name
+        bst : xgboost.core.Booster
+            Pre-trained BDT
+        features : list[str]
+            List of features used to train BDT
         """
         # Pass relevant args and remaining kwargs to parent
         super(Analysis, self).__init__(config, dfs, **kwargs)
@@ -61,23 +62,15 @@ class Analysis(Plots):
         self.bst = bst
         self.features = features
         self.verbose = kwargs["verbose"]
-        # Init functions
-        self._initDfs()
 
-    def _initDfs(self):
-        """Prepare dataframes for BST cut """
-        # Get relevant *_pt columns to scale
-        cols = list(set(self.dfs.columns[self.dfs.columns.str.contains("_pt")])-set(["recoWLepton_pt", "met_pt"])) # *_pt cols
-        cols_s = [c+"_scaled" for c in cols] # Names of new *_pt_scaled cols
+    def Predict(self):
+        """Generate BDT predictions for all dataframes"""
         for name, df in self.dfs.iteritems():
-            # Weigh *_pt columns by reco Higgs mass
-            df[cols_s] = df[cols].div(df.recoHiggs_mass, axis=0)
-            # Save BST predictions
-            self.__preds[name] = bst.predict(xgb.DMatrix(df[self.features]))
+            self.__preds[name] = self.bst.predict(xgb.DMatrix(df[self.features]))
 
         return
 
-    def BestBDTCut(x_test):
+    def BestBDTCut(self, x_test, preds_test, window=None):
         """Calculate optimal BDT working point from testing data 
         
         Using sigma = sqrt(2*(nSig+nBg)*ln(1+nSig/nBg)-2*nSig)
@@ -88,30 +81,47 @@ class Analysis(Plots):
         Parameters
         ----------
         x_test : pandas.DataFrame
-            Dataframe used for testing BDT
+            BDT test data
+        preds_test : pandas.DataFrame
+            BDT test predictions
+        window : numpy.ndarray, (optional)
+            Numpy array of booleans removing data not intended for
+            consideration in ROC curve
 
         Raises
         ------
-        TypeError
-            If x_test is not a pandas dataframe
+        ValueError
+            If window is empty (i.e. [False, False, ..., False])
         """
-        if type(x_test) != pd.core.frame.DataFrame:
-            raise TypeError("Test data must be a pandas DataFrame")
-            return
+        if not window is None:
+            if not np.any(window):
+                raise ValueError("Given window is empty (all values are false).")
+            else:
+                x_test = x_test[window]
+                preds_test = preds_test[window]
+        # BDT ROC Curve
+        fpr, tpr, thresh = roc_curve(x_test.signal, preds_test)
         # Signal, background counts
         counts = x_test.signal.value_counts()
         nSig = tpr*counts[True]
         nBg = fpr*counts[False]
+        # Prevent divide-by-zero errors
+        nonzero = (nBg != 0)
+        nSig = nSig[nonzero]
+        nBg = nBg[nonzero]
         # Sigma
         sigma = (2*(nSig+nBg)*np.log(1+nSig/nBg)-2*nSig)**0.5
-        sigma[~np.isfinite(sigma)] = 0.0
         # Optimal points
-        bestEff = max(sigma)
-        bestBDT = thresh[np.where(sigma == bestEff)[0][0]]
+        bestEff = max(sigma) 
+        bestBDT = float(thresh[np.where(sigma == bestEff)[0][0]]) # Cast numpy.float to float
+
+        if self.verbose:
+            print("BDT working point: {}".format(bestBDT))
+            print("BDT efficiency: {}".format(bestEff))
 
         return bestBDT
 
-    def MakeBDTCut(bdtCut=None):
+    def MakeBDTCut(self, bdtCut):
         """Make cut on BDT variable, update dataframes
         
         Parameters
@@ -121,59 +131,12 @@ class Analysis(Plots):
 
         Raises
         ------
-        TypeError
-            If BDT working poitn is not a float or integer
         ValueError
             If BDT working point not between 0.0 and 1.0
         """
-        if type(bdtCut) not in [float, int]:
-            raise TypeError("BDT cut must be a float or integer.")
-            return
-        elif bdtCut > 1.0 or bdtCut < 0.0:
+        if bdtCut > 1.0 or bdtCut < 0.0:
             raise ValueError("BDT cut must be between 0.0 and 1.0.")
-            return
         else:
-            for name, df in dfs.iteritems():
+            for name, df in self.dfs.iteritems():
                 self.dfs[name] = df[self.__preds[name] > bdtCut]
         return
-
-if __name__ == "__main__":
-
-    # --> Data Retrieval <-- #
-    print("Loading dataframes...")
-    dfs_2016 = GetData("/nfs-7/userdata/jguiang/rare-higgs/2016/v3-0-0/", verbose=False)
-    dfs_2017 = GetData("/nfs-7/userdata/jguiang/rare-higgs/2017/v3-0-0/", verbose=False)
-    dfs_2018 = GetData("/nfs-7/userdata/jguiang/rare-higgs/2018/v3-0-0/", verbose=False)
-    print("Collecting years...")
-    dataframes = CombineYears([dfs_2016, dfs_2017, dfs_2018], signal=config["signal"], verbose=True)
-
-    # --> BDT Retrieval <-- #
-    print("Loading BDT...")
-    # Get testing dataset
-    x_test = pd.read_pickle("x_test.pkl", compression="gzip")
-    # Get BDT model
-    bst = pickle.load(open("bdt.pkl", "r"))
-    # Get BDT features
-    with open("features.json", "r") as fin:
-        features = json.load(fin)
-
-    # --> Analysis <-- #
-    print("Plotting...")
-    # Analysis object
-    analysis = Analysis(config, dataframes, bst, features, verbose=True)
-    # General cuts
-    sanity = "scale1fb > -999"
-    unblindedRegion = "(recoHiggs_mass < 120 or recoHiggs_mass > 130) or isData == 0"
-    ptCuts = "(recoWLepton_pt > 35 and (recoWLepton_id == 11 or recoWLepton_id == -11)) \
-              or (recoWLepton_pt > 30 and (recoWLepton_id == 13 or recoWLepton_id == -13))"
-    hem = "isHEM == 0"
-    gold = "isGold == 1"
-    filters = "passFilters == 1"
-    analysis.MakeCut([sanity, unblindedRegion, ptCuts, hem, gold, filters])
-    # BDT working point
-    bestBDT = analysis.BestBDTCut(x_test)
-    analysis.MakeBDTCut(bestBDT)
-    # Plots
-    analysis.Stacked("recoHiggs_mass", 50,0,200, xLabel=r"$m_{H}$ (GeV)", extra="_bdt", logY=False)
-    analysis.Stacked("recoHiggs_mass", 40,100,180, xLabel=r"$m_{H}$ (GeV)", extra="_bdtZoom", logY=False, no_overflow=True)
-    print("Done.")
