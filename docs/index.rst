@@ -10,6 +10,10 @@ Welcome to Analysis Tools's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   source/analysis
+   source/plots
+   source/tools
+
 
 
 Indices and tables
