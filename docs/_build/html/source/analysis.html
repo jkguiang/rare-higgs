@@ -45,63 +45,111 @@
 <dd>H –&gt; rho/phi+gamma analysis and other related HEP analyses</dd>
 </dl>
 <p>Child to Plots class (see plots.py for shared attribute docs)</p>
-<dl class="docutils">
-<dt>__preds <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: numpy.ndarray }</span></dt>
-<dd>Dictionary of dataframes indexed by sample name</dd>
-<dt>bst <span class="classifier-delimiter">:</span> <span class="classifier">xgboost.core.Booster </span></dt>
-<dd>Pre-trained BDT</dd>
-<dt>features <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
-<dd>List of features used to train BDT</dd>
-<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>Verbosity of module (default False)</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>__preds</strong> <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: numpy.ndarray }</span></dt>
+<dd><p class="first last">Dictionary of dataframes indexed by sample name</p>
+</dd>
+<dt><strong>bst</strong> <span class="classifier-delimiter">:</span> <span class="classifier">xgboost.core.Booster</span></dt>
+<dd><p class="first last">Pre-trained BDT</p>
+</dd>
+<dt><strong>features</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd><p class="first last">List of features used to train BDT</p>
+</dd>
+<dt><strong>verbose</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">Verbosity of module (default False)</p>
+</dd>
 </dl>
-<dl class="docutils">
-<dt>Predict()</dt>
-<dd>Generate BDT predictions for all dataframes</dd>
-<dt>BestBDTCut(x_test, preds_test, window=”“)</dt>
-<dd>Calculate optimal BDT working point from testing data</dd>
-<dt>MakeBDTCut(bdtCut)</dt>
-<dd>Make cut on BDT variable, update dataframes</dd>
-</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="46%" />
+<col width="54%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Predict()</strong></td>
+<td>Generate BDT predictions for all dataframes</td>
+</tr>
+<tr class="row-even"><td><strong>BestBDTCut(x_test, preds_test, window=”“)</strong></td>
+<td>Calculate optimal BDT working point from testing data</td>
+</tr>
+<tr class="row-odd"><td><strong>MakeBDTCut(bdtCut)</strong></td>
+<td>Make cut on BDT variable, update dataframes</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="analysis.Analysis.BestBDTCut">
-<code class="descname">BestBDTCut</code><span class="sig-paren">(</span><em>x_test</em>, <em>preds_test</em>, <em>window=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/analysis.html#Analysis.BestBDTCut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#analysis.Analysis.BestBDTCut" title="Permalink to this definition">¶</a></dt>
+<code class="descname">BestBDTCut</code><span class="sig-paren">(</span><em>self</em>, <em>x_test</em>, <em>preds_test</em>, <em>window=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/analysis.html#Analysis.BestBDTCut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#analysis.Analysis.BestBDTCut" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate optimal BDT working point from testing data</p>
 <p>Using sigma = sqrt(2*(nSig+nBg)*ln(1+nSig/nBg)-2*nSig)
 where nSig = # signal events and nBg = # background events</p>
 <p>Best BDT working point at maximal sigma value</p>
-<dl class="docutils">
-<dt>x_test <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
-<dd>BDT test data</dd>
-<dt>preds_test <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
-<dd>BDT test predictions</dd>
-<dt>window <span class="classifier-delimiter">:</span> <span class="classifier">numpy.ndarray, (optional)</span></dt>
-<dd>Numpy array of booleans removing data not intended for
-consideration in ROC curve</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>x_test</strong> <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
+<dd><p class="first last">BDT test data</p>
+</dd>
+<dt><strong>preds_test</strong> <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
+<dd><p class="first last">BDT test predictions</p>
+</dd>
+<dt><strong>window</strong> <span class="classifier-delimiter">:</span> <span class="classifier">numpy.ndarray, (optional)</span></dt>
+<dd><p class="first last">Numpy array of booleans removing data not intended for
+consideration in ROC curve</p>
+</dd>
 </dl>
-<dl class="docutils">
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><dl class="first last docutils">
 <dt>ValueError</dt>
-<dd>If window is empty (i.e. [False, False, …, False])</dd>
+<dd><p class="first last">If window is empty (i.e. [False, False, …, False])</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="analysis.Analysis.MakeBDTCut">
-<code class="descname">MakeBDTCut</code><span class="sig-paren">(</span><em>bdtCut</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/analysis.html#Analysis.MakeBDTCut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#analysis.Analysis.MakeBDTCut" title="Permalink to this definition">¶</a></dt>
+<code class="descname">MakeBDTCut</code><span class="sig-paren">(</span><em>self</em>, <em>bdtCut</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/analysis.html#Analysis.MakeBDTCut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#analysis.Analysis.MakeBDTCut" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make cut on BDT variable, update dataframes</p>
-<dl class="docutils">
-<dt>bdtCut <span class="classifier-delimiter">:</span> <span class="classifier">int/float</span></dt>
-<dd>BDT working point</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>bdtCut</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int/float</span></dt>
+<dd><p class="first last">BDT working point</p>
+</dd>
 </dl>
-<dl class="docutils">
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><dl class="first last docutils">
 <dt>ValueError</dt>
-<dd>If BDT working point not between 0.0 and 1.0</dd>
+<dd><p class="first last">If BDT working point not between 0.0 and 1.0</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="analysis.Analysis.Predict">
-<code class="descname">Predict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/analysis.html#Analysis.Predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#analysis.Analysis.Predict" title="Permalink to this definition">¶</a></dt>
+<code class="descname">Predict</code><span class="sig-paren">(</span><em>self</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/analysis.html#Analysis.Predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#analysis.Analysis.Predict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate BDT predictions for all dataframes</p>
 </dd></dl>
 

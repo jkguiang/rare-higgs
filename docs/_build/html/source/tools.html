@@ -57,82 +57,147 @@
 <dt id="tools.BDTtoJSON">
 <code class="descclassname">tools.</code><code class="descname">BDTtoJSON</code><span class="sig-paren">(</span><em>fname</em>, <em>bst</em>, <em>features</em>, <em>labels=[]</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tools.html#BDTtoJSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tools.BDTtoJSON" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return JSON of BDT model (Written by Nick Amin)</p>
-<dl class="docutils">
-<dt>fname <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Desired name of output file</dd>
-<dt>bst <span class="classifier-delimiter">:</span> <span class="classifier">xgboost.core.Booster</span></dt>
-<dd>Trained BDT</dd>
-<dt>features <span class="classifier-delimiter">:</span> <span class="classifier">list[str]</span></dt>
-<dd>List of features used to train BDT</dd>
-<dt>labels <span class="classifier-delimiter">:</span> <span class="classifier">list[str], optional</span></dt>
-<dd>Class labels (default [])</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>fname</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Desired name of output file</p>
+</dd>
+<dt><strong>bst</strong> <span class="classifier-delimiter">:</span> <span class="classifier">xgboost.core.Booster</span></dt>
+<dd><p class="first last">Trained BDT</p>
+</dd>
+<dt><strong>features</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list[str]</span></dt>
+<dd><p class="first last">List of features used to train BDT</p>
+</dd>
+<dt><strong>labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list[str], optional</span></dt>
+<dd><p class="first last">Class labels (default [])</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="tools.CombineYears">
 <code class="descclassname">tools.</code><code class="descname">CombineYears</code><span class="sig-paren">(</span><em>dfs_years</em>, <em>signal=''</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tools.html#CombineYears"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tools.CombineYears" title="Permalink to this definition">¶</a></dt>
 <dd><p>Combine 2016, 2017, 2018 dataframes by sample</p>
-<dl class="docutils">
-<dt>dfs_years <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: list[pandas.DataFrame] }</span></dt>
-<dd>Dictionary of lists of pandas dataframes indexed by year</dd>
-<dt>signal <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>Name of signal sample (default “”)</dd>
-<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd>Verbosity of function (default False)</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>dfs_years</strong> <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: list[pandas.DataFrame] }</span></dt>
+<dd><p class="first last">Dictionary of lists of pandas dataframes indexed by year</p>
+</dd>
+<dt><strong>signal</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd><p class="first last">Name of signal sample (default “”)</p>
+</dd>
+<dt><strong>verbose</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Verbosity of function (default False)</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="tools.GetData">
 <code class="descclassname">tools.</code><code class="descname">GetData</code><span class="sig-paren">(</span><em>inDir</em>, <em>pklJar='pickles/'</em>, <em>mcOnly=False</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tools.html#GetData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tools.GetData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make dictionary of Pandas dataframes</p>
-<dl class="docutils">
-<dt>inDir <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Path to existing directory of .root files</dd>
-<dt>pklJar <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>Path where pickled dataframes should be saved (default ‘pickles/’)</dd>
-<dt>mcOnly <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd>Specify if only grapping Monte Carlo samples (default False)</dd>
-<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd>Verbosity of function (default False)</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>inDir</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Path to existing directory of .root files</p>
+</dd>
+<dt><strong>pklJar</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd><p class="first last">Path where pickled dataframes should be saved (default ‘pickles/’)</p>
+</dd>
+<dt><strong>mcOnly</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Specify if only grapping Monte Carlo samples (default False)</p>
+</dd>
+<dt><strong>verbose</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Verbosity of function (default False)</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="tools.JSONtoC">
 <code class="descclassname">tools.</code><code class="descname">JSONtoC</code><span class="sig-paren">(</span><em>fname_in</em>, <em>fname_out=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tools.html#JSONtoC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tools.JSONtoC" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return C function that mimics BDT output (Written by Nick Amin)</p>
-<dl class="docutils">
-<dt>fname_in <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Name of input JSON file</dd>
-<dt>fname_out <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>Desired name of output C file</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>fname_in</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Name of input JSON file</p>
+</dd>
+<dt><strong>fname_out</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd><p class="first last">Desired name of output C file</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="tools.ModifyData">
 <code class="descclassname">tools.</code><code class="descname">ModifyData</code><span class="sig-paren">(</span><em>dfs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tools.html#ModifyData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tools.ModifyData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return modified dictionary of Pandas dataframes</p>
-<dl class="docutils">
-<dt>dfs <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: pandas.DataFrame }</span></dt>
-<dd>Dictionary of pandas dataframes indexed by sample name</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>dfs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: pandas.DataFrame }</span></dt>
+<dd><p class="first last">Dictionary of pandas dataframes indexed by sample name</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="tools.ScaleByCol">
 <code class="descclassname">tools.</code><code class="descname">ScaleByCol</code><span class="sig-paren">(</span><em>dfs</em>, <em>bCols</em>, <em>wCol</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tools.html#ScaleByCol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tools.ScaleByCol" title="Permalink to this definition">¶</a></dt>
 <dd><p>Scale all dataframe ‘base’ columns by one ‘weight’ column</p>
-<dl class="docutils">
-<dt>dfs <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: pandas.DataFrame }</span></dt>
-<dd>Dictionary of pandas dataframes indexed by sample name</dd>
-<dt>bCols <span class="classifier-delimiter">:</span> <span class="classifier">list[str]</span></dt>
-<dd>List of base column names</dd>
-<dt>wCol <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Weight column name</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>dfs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: pandas.DataFrame }</span></dt>
+<dd><p class="first last">Dictionary of pandas dataframes indexed by sample name</p>
+</dd>
+<dt><strong>bCols</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list[str]</span></dt>
+<dd><p class="first last">List of base column names</p>
+</dd>
+<dt><strong>wCol</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Weight column name</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

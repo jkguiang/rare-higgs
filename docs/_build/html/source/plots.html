@@ -45,70 +45,117 @@
 <dd>for use in the H –&gt; rho/phi+gamma analysis and other related HEP analyses</dd>
 </dl>
 <p>Parent to Analysis class</p>
-<dl class="docutils">
-<dt>__colors <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: list[int, int, int] }</span></dt>
-<dd>Dictionary of RGB values indexed by sample name</dd>
-<dt>dfs <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: pandas.DataFrame }</span></dt>
-<dd>Dictionary of pandas dataframes indexed by sample name</dd>
-<dt>signal <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Name of signal dataset</dd>
-<dt>outDir <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>Integrated luminosity (default 137.0)</dd>
-<dt>lumi <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
-<dd>Integrated luminosity (default 137.0)</dd>
-<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd>Verbosity of module (default False)</dd>
-</dl>
-<dl class="docutils">
-<dt>_initColors()</dt>
-<dd>Initialize available colors</dd>
-<dt>_initOutput()</dt>
-<dd>Initialize output directory</dd>
-<dt>MakeCut(cut)</dt>
-<dd>Make cut on a query string or list of query strings, then update dataframes</dd>
-<dt>Stacked(col, nBins, xMin, xMax, xLabel=”“, extra=”“, logY=False,</dt>
-<dd><blockquote class="first">
-<div>sigWeight=None, overflow=True, save=True)</div></blockquote>
-<p class="last">Make plot of stacked 1D histograms of MC and data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>__colors</strong> <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: list[int, int, int] }</span></dt>
+<dd><p class="first last">Dictionary of RGB values indexed by sample name</p>
+</dd>
+<dt><strong>dfs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: pandas.DataFrame }</span></dt>
+<dd><p class="first last">Dictionary of pandas dataframes indexed by sample name</p>
+</dd>
+<dt><strong>signal</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Name of signal dataset</p>
+</dd>
+<dt><strong>outDir</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd><p class="first last">Integrated luminosity (default 137.0)</p>
+</dd>
+<dt><strong>lumi</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Integrated luminosity (default 137.0)</p>
+</dd>
+<dt><strong>verbose</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Verbosity of module (default False)</p>
 </dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="43%" />
+<col width="57%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>_initColors()</strong></td>
+<td>Initialize available colors</td>
+</tr>
+<tr class="row-even"><td><strong>_initOutput()</strong></td>
+<td>Initialize output directory</td>
+</tr>
+<tr class="row-odd"><td><strong>MakeCut(cut)</strong></td>
+<td>Make cut on a query string or list of query strings, then update dataframes</td>
+</tr>
+<tr class="row-even"><td><strong>Stacked(col, nBins, xMin, xMax, xLabel=”“, extra=”“, logY=False,</strong></td>
+<td>sigWeight=None, overflow=True, save=True) Make plot of stacked 1D histograms of MC and data</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="plots.Plots.MakeCut">
-<code class="descname">MakeCut</code><span class="sig-paren">(</span><em>cut</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/plots.html#Plots.MakeCut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plots.Plots.MakeCut" title="Permalink to this definition">¶</a></dt>
+<code class="descname">MakeCut</code><span class="sig-paren">(</span><em>self</em>, <em>cut</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/plots.html#Plots.MakeCut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plots.Plots.MakeCut" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make selection on a query string or list of query strings, then update dataframes</p>
-<dl class="docutils">
-<dt>cut <span class="classifier-delimiter">:</span> <span class="classifier">str or list of str</span></dt>
-<dd>Query string usable in pandas.DataFrame.query()</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>cut</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str or list of str</span></dt>
+<dd><p class="first last">Query string usable in pandas.DataFrame.query()</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="plots.Plots.Shape">
-<code class="descname">Shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/plots.html#Plots.Shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plots.Plots.Shape" title="Permalink to this definition">¶</a></dt>
+<code class="descname">Shape</code><span class="sig-paren">(</span><em>self</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/plots.html#Plots.Shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plots.Plots.Shape" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="plots.Plots.Stacked">
-<code class="descname">Stacked</code><span class="sig-paren">(</span><em>col</em>, <em>nBins</em>, <em>xMin</em>, <em>xMax</em>, <em>xLabel=''</em>, <em>extra=''</em>, <em>logY=False</em>, <em>sigWeight=None</em>, <em>overflow=True</em>, <em>save=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/plots.html#Plots.Stacked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plots.Plots.Stacked" title="Permalink to this definition">¶</a></dt>
+<code class="descname">Stacked</code><span class="sig-paren">(</span><em>self</em>, <em>col</em>, <em>nBins</em>, <em>xMin</em>, <em>xMax</em>, <em>xLabel=''</em>, <em>extra=''</em>, <em>logY=False</em>, <em>sigWeight=None</em>, <em>overflow=True</em>, <em>save=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/plots.html#Plots.Stacked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plots.Plots.Stacked" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make stacked 1D histogram of MC and data for a given column name</p>
-<dl class="docutils">
-<dt>col <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Column name to be plotted</dd>
-<dt>nBins, xMin, xMax <span class="classifier-delimiter">:</span> <span class="classifier">int, int/float, int/float</span></dt>
-<dd>Number of bins, minimum x-value, maximum x-value</dd>
-<dt>xLabel <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>Label for x-axis</dd>
-<dt>extra <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>‘Extra’ string to append to plot name to prevent overwriting</dd>
-<dt>logY <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd>Toggle logarithmic y-axis (default False)</dd>
-<dt>sigWeight <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
-<dd>Force weight for signal (default None)</dd>
-<dt>overflow <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd>Toggle overflow bins (default True)</dd>
-<dt>save <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd>Save PDF copy of plot (default True)</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>col</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Column name to be plotted</p>
+</dd>
+<dt><strong>nBins, xMin, xMax</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int, int/float, int/float</span></dt>
+<dd><p class="first last">Number of bins, minimum x-value, maximum x-value</p>
+</dd>
+<dt><strong>xLabel</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd><p class="first last">Label for x-axis</p>
+</dd>
+<dt><strong>extra</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">‘Extra’ string to append to plot name to prevent overwriting</p>
+</dd>
+<dt><strong>logY</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Toggle logarithmic y-axis (default False)</p>
+</dd>
+<dt><strong>sigWeight</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Force weight for signal (default None)</p>
+</dd>
+<dt><strong>overflow</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Toggle overflow bins (default True)</p>
+</dd>
+<dt><strong>save</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Save PDF copy of plot (default True)</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
