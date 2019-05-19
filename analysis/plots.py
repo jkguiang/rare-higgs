@@ -214,8 +214,7 @@ if __name__ == "__main__":
     # Cuts
     sanity = "scale1fb > -999"
     unblinded = "(recoHiggs_mass < 120 or recoHiggs_mass > 130) or isData == 0"
-    ptCuts = "(recoWLepton_pt > 35 and (recoWLepton_id == 11 or recoWLepton_id == -11)) \
-              or (recoWLepton_pt > 30 and (recoWLepton_id == 13 or recoWLepton_id == -13))"
+    ptCuts = "(recoWLepton_pt > 35 and abs(recoWLepton_id) == 11) or (recoWLepton_pt > 30 and abs(recoWLepton_id) == 13)"
     hem = "isHEM == 0"
     gold = "isGold == 1"
     filters = "passFilters == 1"
@@ -266,4 +265,4 @@ if __name__ == "__main__":
     plots.Stacked("recoMagAng_Phi1", 50,-4,4, xLabel=r"$\Phi_{1}$", logY=False, overflow=False)
     plots.Stacked("recoMagAng_m1", 50,50,300, xLabel=r"$m_{1}$", logY=False)
     plots.Stacked("recoMagAng_m2", 50,0,200, xLabel=r"$m_{2}$", logY=False)
-    print("Done")
+    print("Done.")
