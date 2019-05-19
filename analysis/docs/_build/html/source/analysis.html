@@ -1,0 +1,175 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>analysis module &#8212; Analysis Tools  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-analysis">
+<span id="analysis-module"></span><h1>analysis module<a class="headerlink" href="#module-analysis" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="analysis.Analysis">
+<em class="property">class </em><code class="descclassname">analysis.</code><code class="descname">Analysis</code><span class="sig-paren">(</span><em>config</em>, <em>dfs</em>, <em>bst</em>, <em>features</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/analysis.html#Analysis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#analysis.Analysis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="plots.html#plots.Plots" title="plots.Plots"><code class="xref py py-class docutils literal notranslate"><span class="pre">plots.Plots</span></code></a></p>
+<dl class="docutils">
+<dt>Make plots using the Plots methods and pre-trained BDT model for use in the</dt>
+<dd>H –&gt; rho/phi+gamma analysis and other related HEP analyses</dd>
+</dl>
+<p>Child to Plots class (see plots.py for shared attribute docs)</p>
+<dl class="docutils">
+<dt>__preds <span class="classifier-delimiter">:</span> <span class="classifier">dict{ str: numpy.ndarray }</span></dt>
+<dd>Dictionary of dataframes indexed by sample name</dd>
+<dt>bst <span class="classifier-delimiter">:</span> <span class="classifier">xgboost.core.Booster </span></dt>
+<dd>Pre-trained BDT</dd>
+<dt>features <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>List of features used to train BDT</dd>
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Verbosity of module (default False)</dd>
+</dl>
+<dl class="docutils">
+<dt>Predict()</dt>
+<dd>Generate BDT predictions for all dataframes</dd>
+<dt>BestBDTCut(x_test, preds_test, window=”“)</dt>
+<dd>Calculate optimal BDT working point from testing data</dd>
+<dt>MakeBDTCut(bdtCut)</dt>
+<dd>Make cut on BDT variable, update dataframes</dd>
+</dl>
+<dl class="method">
+<dt id="analysis.Analysis.BestBDTCut">
+<code class="descname">BestBDTCut</code><span class="sig-paren">(</span><em>x_test</em>, <em>preds_test</em>, <em>window=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/analysis.html#Analysis.BestBDTCut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#analysis.Analysis.BestBDTCut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate optimal BDT working point from testing data</p>
+<p>Using sigma = sqrt(2*(nSig+nBg)*ln(1+nSig/nBg)-2*nSig)
+where nSig = # signal events and nBg = # background events</p>
+<p>Best BDT working point at maximal sigma value</p>
+<dl class="docutils">
+<dt>x_test <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
+<dd>BDT test data</dd>
+<dt>preds_test <span class="classifier-delimiter">:</span> <span class="classifier">pandas.DataFrame</span></dt>
+<dd>BDT test predictions</dd>
+<dt>window <span class="classifier-delimiter">:</span> <span class="classifier">numpy.ndarray, (optional)</span></dt>
+<dd>Numpy array of booleans removing data not intended for
+consideration in ROC curve</dd>
+</dl>
+<dl class="docutils">
+<dt>ValueError</dt>
+<dd>If window is empty (i.e. [False, False, …, False])</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="analysis.Analysis.MakeBDTCut">
+<code class="descname">MakeBDTCut</code><span class="sig-paren">(</span><em>bdtCut</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/analysis.html#Analysis.MakeBDTCut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#analysis.Analysis.MakeBDTCut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make cut on BDT variable, update dataframes</p>
+<dl class="docutils">
+<dt>bdtCut <span class="classifier-delimiter">:</span> <span class="classifier">int/float</span></dt>
+<dd>BDT working point</dd>
+</dl>
+<dl class="docutils">
+<dt>ValueError</dt>
+<dd>If BDT working point not between 0.0 and 1.0</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="analysis.Analysis.Predict">
+<code class="descname">Predict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/analysis.html#Analysis.Predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#analysis.Analysis.Predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate BDT predictions for all dataframes</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Analysis Tools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Jonathan Guiang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/analysis.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
