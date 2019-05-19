@@ -148,6 +148,7 @@ if __name__ == "__main__":
     dataframes = CombineYears([dfs_2016, dfs_2017, dfs_2018], signal=config["signal"], verbose=True)
 
     # --> BDT Retrieval <-- #
+    print("Loading BDT...")
     # Get testing dataset
     x_test = pd.read_pickle("x_test.pkl", compression="gzip")
     # Get BDT model
@@ -160,10 +161,19 @@ if __name__ == "__main__":
     print("Plotting...")
     # Analysis object
     analysis = Analysis(config, dataframes, bst, features, verbose=True)
+    # General cuts
+    sanity = "scale1fb > -999"
+    unblindedRegion = "(recoHiggs_mass < 120 or recoHiggs_mass > 130) or isData == 0"
+    ptCuts = "(recoWLepton_pt > 35 and (recoWLepton_id == 11 or recoWLepton_id == -11)) \
+              or (recoWLepton_pt > 30 and (recoWLepton_id == 13 or recoWLepton_id == -13))"
+    hem = "isHEM == 0"
+    gold = "isGold == 1"
+    filters = "passFilters == 1"
+    analysis.MakeCut([sanity, unblindedRegion, ptCuts, hem, gold, filters])
     # BDT working point
     bestBDT = analysis.BestBDTCut(x_test)
-    # Make cut on data
     analysis.MakeBDTCut(bestBDT)
     # Plots
-    analysis.Stacked("recoHiggs_mass", 50,0,200, xLabel=r"$m_{H}$ (GeV)", extra="_bdt", logY=False, blind=True)
-    analysis.Stacked("recoHiggs_mass", 40,100,180, xLabel=r"$m_{H}$ (GeV)", extra="_bdtZoom", logY=False, blind=True, no_overflow=True)
+    analysis.Stacked("recoHiggs_mass", 50,0,200, xLabel=r"$m_{H}$ (GeV)", extra="_bdt", logY=False)
+    analysis.Stacked("recoHiggs_mass", 40,100,180, xLabel=r"$m_{H}$ (GeV)", extra="_bdtZoom", logY=False, no_overflow=True)
+    print("Done.")
