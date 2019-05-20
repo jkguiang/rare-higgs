@@ -156,7 +156,8 @@ void computeAngles(
   TLorentzVector p4M11, int Z1_lept1Id,
   TLorentzVector p4M12, int Z1_lept2Id,
   TLorentzVector p4M21, int Z2_lept1Id,
-  TLorentzVector p4M22, int Z2_lept2Id
+  TLorentzVector p4M22, int Z2_lept2Id,
+  bool verbose=false
   ){
   TLorentzVector nullFourVector(0, 0, 0, 0);
   if (p4M12==nullFourVector || p4M22==nullFourVector){
@@ -225,7 +226,7 @@ void computeAngles(
   //// --------------------------- costheta1
   if (!(fabs(Z1_lept1Id)==21 || fabs(Z1_lept1Id)==22 || fabs(Z1_lept2Id)==21 || fabs(Z1_lept2Id)==22)){
     boostV1 = -(p4Z1.BoostVector());
-    if (boostV1.Mag()>=1.) {
+    if (boostV1.Mag()>=1. && verbose) {
         std::cout << "Warning: computeAngles: Z1 boost with beta=1, scaling down" << std::endl;
       boostV1*=0.9999/boostV1.Mag();
     }
@@ -247,7 +248,7 @@ void computeAngles(
   //// --------------------------- costheta2
   if (!(fabs(Z2_lept1Id)==21 || fabs(Z2_lept1Id)==22 || fabs(Z2_lept2Id)==21 || fabs(Z2_lept2Id)==22)){
     boostV2 = -(p4Z2.BoostVector());
-    if (boostV2.Mag()>=1.) {
+    if (boostV2.Mag()>=1. && verbose) {
         std::cout << "Warning: computeAngles: Z2 boost with beta=1, scaling down" << std::endl;
       boostV2*=0.9999/boostV2.Mag();
     }
@@ -302,15 +303,15 @@ void computeAngles(
   if (fabs(dot_BX1SC)>=1.) dot_BX1SC *= 1./fabs(dot_BX1SC);
   Phi1 = sgnPhi1 * acos(dot_BX1SC);
 
-  if (isnan(costhetastar) || isnan(costheta1) || isnan(costheta2) || isnan(Phi) || isnan(Phi1)){
-      std::cout << "WARNING: NaN in computeAngles: "
-      << costhetastar << " "
-      << costheta1  << " "
-      << costheta2  << " "
-      << Phi  << " "
-      << Phi1  << " " << std::endl;
-      std::cout << "   boostV1: " <<boostV1.Pt() << " " << boostV1.Eta() << " " << boostV1.Phi() << " " << boostV1.Mag() << std::endl;
-      std::cout << "   boostV2: " <<boostV2.Pt() << " " << boostV2.Eta() << " " << boostV2.Phi() << " " << boostV2.Mag() << std::endl;
+  if ((isnan(costhetastar) || isnan(costheta1) || isnan(costheta2) || isnan(Phi) || isnan(Phi1)) && (verbose)){
+    std::cout << "WARNING: NaN in computeAngles: "
+    << costhetastar << " "
+    << costheta1  << " "
+    << costheta2  << " "
+    << Phi  << " "
+    << Phi1  << " " << std::endl;
+    std::cout << "   boostV1: " <<boostV1.Pt() << " " << boostV1.Eta() << " " << boostV1.Phi() << " " << boostV1.Mag() << std::endl;
+    std::cout << "   boostV2: " <<boostV2.Pt() << " " << boostV2.Eta() << " " << boostV2.Phi() << " " << boostV2.Mag() << std::endl;
   }
 }
 
@@ -464,28 +465,32 @@ struct MagicAngles {
     float angles[7];
 };
 
-MagicAngles getAngles(float met_pt, float met_phi, int lep_id, TLorentzVector lep_p4, TLorentzVector mes_p4, TLorentzVector gam_p4) {
+MagicAngles getAngles(float met_pt, float met_phi, int lep_id, TLorentzVector lep_p4, TLorentzVector mes_p4, TLorentzVector gam_p4, float nu_pz=-999) {
     // Known neutrino 3-momentum components
-    float p_vx = met_pt*cos(met_phi);
-    float p_vy = met_pt*sin(met_phi);
+    float nu_px = met_pt*cos(met_phi);
+    float nu_py = met_pt*sin(met_phi);
     // Best lepton 3-momentum
-    float p_lx = lep_p4.Px();
-    float p_ly = lep_p4.Py();
-    float p_lz = lep_p4.Pz();
-    float E_l = pow(pow(p_lx, 2)+pow(p_ly, 2)+pow(p_lz, 2), 0.5); // m_l ~ 0
+    float lep_px = lep_p4.Px();
+    float lep_py = lep_p4.Py();
+    float lep_pz = lep_p4.Pz();
+    float E_l = pow(pow(lep_px, 2)+pow(lep_py, 2)+pow(lep_pz, 2), 0.5); // m_l ~ 0
     // Mass of W-boson
     float m = 80.379;
-    // Terms of quadratic equation solutions for p_vz
-    float a = ( pow(E_l,2) - pow(p_lz,2) );
-    float b = ( -p_lz*pow(m,2) - 2*p_lx*p_lz*p_vx - 2*p_ly*p_lz*p_vy );
-    float c = ( pow(E_l,2)*pow(p_vy,2) - pow(p_ly,2)*pow(p_vy,2) - pow(m,2)*p_ly*p_vy + pow(E_l,2)*pow(p_vx,2) - pow(p_lx,2)*pow(p_vx,2) - pow(m,2)*p_lx*p_vx -2*p_lx*p_ly*p_vx*p_vy - pow(m,4)/4 );
-    float disc = ( pow(b, 2) - 4*a*c );
-    if (disc < 0) disc = 0.0;
-    // Determine p_vz
-    float p_vz = 0.0;
-    float quad_p = (-b+pow(disc, 0.5))/(2*a);
-    float quad_m = (-b-pow(disc, 0.5))/(2*a);
-    p_vz = (abs(quad_p) < abs(quad_m)) ? quad_p : quad_m;
+    // Solve for nu_pz if not provided
+    if (nu_pz < -998) {
+        // Terms of quadratic equation solutions for nu_pz
+        float a = ( pow(E_l,2) - pow(lep_pz,2) );
+        float b = ( -lep_pz*pow(m,2) - 2*lep_px*lep_pz*nu_px - 2*lep_py*lep_pz*nu_py );
+        float c = ( pow(E_l,2)*pow(nu_py,2) - pow(lep_py,2)*pow(nu_py,2) - pow(m,2)*lep_py*nu_py + pow(E_l,2)*pow(nu_px,2) 
+                    - pow(lep_px,2)*pow(nu_px,2) - pow(m,2)*lep_px*nu_px -2*lep_px*lep_py*nu_px*nu_py - pow(m,4)/4 );
+        float disc = ( pow(b, 2) - 4*a*c );
+        if (disc < 0) disc = 0.0;
+        // Determine nu_pz
+        float nu_pz = 0.0;
+        float quad_p = (-b+pow(disc, 0.5))/(2*a);
+        float quad_m = (-b-pow(disc, 0.5))/(2*a);
+        nu_pz = (abs(quad_p) < abs(quad_m)) ? quad_p : quad_m;
+    }
     // MELA output params
     float costhetastar = -999;
     float costheta1 = -999;
@@ -495,11 +500,11 @@ MagicAngles getAngles(float met_pt, float met_phi, int lep_id, TLorentzVector le
     float m1 = -999;
     float m2 = -999;
     // MELA input params
-    TLorentzVector neu_p4(p_vx, p_vy, p_vz, pow(pow(p_vx, 2)+pow(p_vy, 2)+pow(p_vz, 2), 0.5)); // m_v ~ 0
-    TLorentzVector dummy(0,0,0,0);
-    TLorentzVector jet1 = (lep_id > 0) ? lep_p4 : neu_p4;
+    TLorentzVector nu_p4(nu_px, nu_py, nu_pz, pow(pow(nu_px, 2)+pow(nu_py, 2)+pow(nu_pz, 2), 0.5)); // m_v ~ 0
+    TLorentzVector dummy_p4(0,0,0,0);
+    TLorentzVector jet1 = (lep_id > 0) ? lep_p4 : nu_p4;
     int jet1Id = (lep_id > 0) ? lep_id : -lep_id+1;
-    TLorentzVector jet2 = (lep_id > 0) ? neu_p4 : lep_p4;
+    TLorentzVector jet2 = (lep_id > 0) ? nu_p4 : lep_p4;
     int jet2Id = (lep_id > 0) ? -lep_id-1 : lep_id;
     // Get angles
     computeVHAngles(
@@ -511,9 +516,9 @@ MagicAngles getAngles(float met_pt, float met_phi, int lep_id, TLorentzVector le
             m1,
             m2,
             mes_p4, 23,
-            dummy, -9000,
+            dummy_p4, -9000,
             gam_p4, 23,
-            dummy, -9000,
+            dummy_p4, -9000,
             jet1, jet1Id,
             jet2, jet2Id,
             nullptr, -9000,

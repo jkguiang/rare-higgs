@@ -38,7 +38,7 @@ using namespace tas;
 // Global Variables
 DatasetInfoFromFile datasetInfoFromFile;
 
-int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose = false, bool fast = true, int nEvents = -1, string skimFilePrefix = "test") {
+int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose=false, bool fast=true, int nEvents=-1, string skimFilePrefix="test") {
 
     // Benchmark
     TBenchmark *bmark = new TBenchmark();
