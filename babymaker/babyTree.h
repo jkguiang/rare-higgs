@@ -36,6 +36,13 @@ class BabyTree {
     TBranch* b_recoMagAng_Phi1;
     TBranch* b_recoMagAng_m1;
     TBranch* b_recoMagAng_m2;
+    TBranch* b_genMagAng_cosThetaStar;
+    TBranch* b_genMagAng_cosTheta1;
+    TBranch* b_genMagAng_cosTheta2;
+    TBranch* b_genMagAng_Phi;
+    TBranch* b_genMagAng_Phi1;
+    TBranch* b_genMagAng_m1;
+    TBranch* b_genMagAng_m2;
 
     /* --> Gen Branches <-- */
     // W Boson
@@ -141,23 +148,29 @@ class BabyTree {
         Config config;
 
         /* --> Meta Branch Values <-- */
+        // Event info
         int run;
         int lumi;
         int event;
         float scale1fb;
         int isGold;
         int isHEM;
+        // MET
         float met_pt;
         float met_phi;
         float rawMet_pt;
         float rawMet_phi;
+        // Triggers
         int HLT_singleMu; 
         int HLT_singleEl; 
+        // Filters
         int passFilters;
         /* --> Special Branch Values <-- */
+        // dR(gen, reco)
         float genRecoGamma_dR;
         float genRecoPhi_dR;
         float genRecoRho_dR;
+        // Magic Angles
         float recoMagAng_cosThetaStar;
         float recoMagAng_cosTheta1;
         float recoMagAng_cosTheta2;
@@ -165,6 +178,13 @@ class BabyTree {
         float recoMagAng_Phi1;
         float recoMagAng_m1;
         float recoMagAng_m2;
+        float genMagAng_cosThetaStar;
+        float genMagAng_cosTheta1;
+        float genMagAng_cosTheta2;
+        float genMagAng_Phi;
+        float genMagAng_Phi1;
+        float genMagAng_m1;
+        float genMagAng_m2;
 
         /* --> Gen Branch Values <-- */
         // W Boson

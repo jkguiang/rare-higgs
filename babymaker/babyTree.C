@@ -63,7 +63,7 @@ BabyTree::BabyTree() {
     // Filters
     b_passFilters = t->Branch("passFilters", &passFilters, "passFilters/I");
     /* --> Special Branches Setup <-- */
-    // Gen-Reco dR
+    // dR(gen, reco)
     b_genRecoGamma_dR = t->Branch("genRecoGamma_dR", &genRecoGamma_dR, "genRecoGamma_dR/F");
     b_genRecoPhi_dR = t->Branch("genRecoPhi_dR", &genRecoPhi_dR, "genRecoPhi_dR/F");
     b_genRecoRho_dR = t->Branch("genRecoRho_dR", &genRecoRho_dR, "genRecoRho_dR/F");
@@ -75,6 +75,13 @@ BabyTree::BabyTree() {
     b_recoMagAng_Phi1 = t->Branch("recoMagAng_Phi1", &recoMagAng_Phi1, "recoMagAng_Phi1/F");
     b_recoMagAng_m1 = t->Branch("recoMagAng_m1", &recoMagAng_m1, "recoMagAng_m1/F");
     b_recoMagAng_m2 = t->Branch("recoMagAng_m2", &recoMagAng_m2, "recoMagAng_m2/F");
+    b_genMagAng_cosThetaStar = t->Branch("genMagAng_cosThetaStar", &genMagAng_cosThetaStar, "genMagAng_cosThetaStar/F");
+    b_genMagAng_cosTheta1 = t->Branch("genMagAng_cosTheta1", &genMagAng_cosTheta1, "genMagAng_cosTheta1/F");
+    b_genMagAng_cosTheta2 = t->Branch("genMagAng_cosTheta2", &genMagAng_cosTheta2, "genMagAng_cosTheta2/F");
+    b_genMagAng_Phi = t->Branch("genMagAng_Phi", &genMagAng_Phi, "genMagAng_Phi/F");
+    b_genMagAng_Phi1 = t->Branch("genMagAng_Phi1", &genMagAng_Phi1, "genMagAng_Phi1/F");
+    b_genMagAng_m1 = t->Branch("genMagAng_m1", &genMagAng_m1, "genMagAng_m1/F");
+    b_genMagAng_m2 = t->Branch("genMagAng_m2", &genMagAng_m2, "genMagAng_m2/F");
     /* --> Gen Branches Setup <-- */
     // Gen W
     b_genW_pt = t->Branch("genW_pt", &genW_pt, "genW_pt/F");
@@ -196,6 +203,13 @@ void BabyTree::Reset() {
     recoMagAng_Phi1 = -999;
     recoMagAng_m1 = -999;
     recoMagAng_m2 = -999;
+    genMagAng_cosThetaStar = -999;
+    genMagAng_cosTheta1 = -999;
+    genMagAng_cosTheta2 = -999;
+    genMagAng_Phi = -999;
+    genMagAng_Phi1 = -999;
+    genMagAng_m1 = -999;
+    genMagAng_m2 = -999;
     // Gen
     genW_pt = -999;
     genW_eta = -999;
@@ -367,6 +381,8 @@ float BabyTree::dR(float phi1, float phi2, float eta1, float eta2) {
  */
 void BabyTree::FillGenBranches() {
 
+    /* --> Find and save relevant decay modes <-- */
+
     // Decay mode tracking information
     enum modes { H_to_PhiGamma = 0, H_to_RhoGamma = 1, H_to_KKGamma = 2, Phi_to_KK = 3, W_to_ElNu = 4, W_to_MuNu = 5 };
     int mothers[6] = { 0,0,0,0,0,0 };
@@ -386,24 +402,30 @@ void BabyTree::FillGenBranches() {
         // Fill branches for mother particles
         if (thisID == 25) {
             // Fill Higgs boson branches
-            genHiggs_pt = genps_p4()[i].pt();
-            genHiggs_eta = genps_p4()[i].eta();
-            genHiggs_phi = genps_p4()[i].phi(); 
+            genHiggs_pt = genps_p4().at(i).pt();
+            genHiggs_eta = genps_p4().at(i).eta();
+            genHiggs_phi = genps_p4().at(i).phi(); 
         }
-        if (thisID == 24 || thisID == -24) {
+        if (abs(thisID) == 24) {
             // Fill W boson branches
-            genW_pt = genps_p4()[i].pt();
-            genW_eta = genps_p4()[i].eta();
-            genW_phi = genps_p4()[i].phi(); 
+            genW_pt = genps_p4().at(i).pt();
+            genW_eta = genps_p4().at(i).eta();
+            genW_phi = genps_p4().at(i).phi(); 
         }
         // Add particle id, idx, p4 to relevant systems
-        if (thisMotherID == 24 || thisMotherID == -24) {
-            if (thisID == -11 || thisID == 11) {
+        if (abs(thisMotherID) == 24) {
+            if (abs(thisID) == 11) {
                 mothers[W_to_ElNu] = thisMotherIdx;
                 daughters[W_to_ElNu].push_back(i);
             }
-            if (thisID == -13 || thisID == 13) {
+            if (abs(thisID) == 13) {
                 mothers[W_to_MuNu] = thisMotherIdx;
+                daughters[W_to_MuNu].push_back(i);
+            }
+            if (abs(thisID) == 12) {
+                daughters[W_to_ElNu].push_back(i);
+            }
+            if (abs(thisID) == 14) {
                 daughters[W_to_MuNu].push_back(i);
             }
         }
@@ -422,7 +444,7 @@ void BabyTree::FillGenBranches() {
             }
         }
         if (thisMotherID == 333) {
-            if ((thisID == 321 || thisID == -321) && genps_id_mother()[thisMotherIdx] == 25) {
+            if (abs(thisID) == 321 && genps_id_mother()[thisMotherIdx] == 25) {
                 // Fill Phi->KK Mother/Daughters
                 mothers[Phi_to_KK] = thisMotherIdx;
                 daughters[Phi_to_KK].push_back(i);
@@ -436,8 +458,9 @@ void BabyTree::FillGenBranches() {
     LorentzVector p4_sum;
     int decay;
 
-    // Retrieve products filled in gen-level loop, fill tree branches
-    if (daughters[W_to_MuNu].size() == 1 || daughters[W_to_ElNu].size() == 1) {
+    /* --> Fill W --> el/mu, nu <-- */
+    LorentzVector lepton_p4, nu_p4;
+    if (daughters[W_to_MuNu].size() == 2 || daughters[W_to_ElNu].size() == 2) {
         decay = (daughters[W_to_MuNu].size() == 1) ? W_to_MuNu : W_to_ElNu;
         p4_sum -= p4_sum; // Reset p4 sum
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
@@ -446,15 +469,24 @@ void BabyTree::FillGenBranches() {
             int id = genps_id().at(idx);
             LorentzVector p4 = genps_p4().at(idx);
             // Fill leptons from W branches
-            genWLepton_id = id;
-            genWLepton_pt = p4.pt();
-            genWLepton_eta = p4.eta();
-            genWLepton_phi = p4.phi();
-            p4_sum += p4;
+            if (abs(id) == 11 || abs(id) == 13) {
+                lepton_p4 = p4;
+                genWLepton_id = id;
+                genWLepton_pt = p4.pt();
+                genWLepton_eta = p4.eta();
+                genWLepton_phi = p4.phi();
+                p4_sum += p4;
+            }
+            else {
+                // Save neutrino kinematics for magic angles calculation
+                nu_p4 = p4;
+            }
         }
         genW_mass = p4_sum.M();
     }
 
+    /* --> Fill H --> phi/rho, gamma <-- */
+    LorentzVector gamma_p4;
     if (daughters[H_to_PhiGamma].size() == 2 || daughters[H_to_RhoGamma].size() == 2) {
         decay = (daughters[H_to_PhiGamma].size() == 2) ? H_to_PhiGamma : H_to_RhoGamma;
         p4_sum -= p4_sum; // Reset p4 sum
@@ -465,6 +497,7 @@ void BabyTree::FillGenBranches() {
             LorentzVector p4 = genps_p4().at(idx);
             // Fill photon branches
             if (id == 22) {
+                gamma_p4 = p4;
                 genGamma_pt = p4.pt();
                 genGamma_eta = p4.eta();
                 genGamma_phi = p4.phi();
@@ -483,6 +516,8 @@ void BabyTree::FillGenBranches() {
         genHiggs_mass = p4_sum.M();
     }
 
+    /* --> Fill phi --> K+, K- <-- */
+    LorentzVector phi_p4;
     if (daughters[Phi_to_KK].size() == 2) {
         decay = Phi_to_KK;
         p4_sum -= p4_sum; // Reset p4 sum
@@ -506,7 +541,28 @@ void BabyTree::FillGenBranches() {
             }
         }
         genKpKm_dR = dR(genKp_phi, genKm_phi, genKp_eta, genKm_eta);
-        genHiggsMeson_mass = p4_sum.M();
+        phi_p4 = p4_sum;
+        genHiggsMeson_mass = phi_p4.M();
+    }
+
+    /* --> Fill Magic Angles <-- */
+    if ((daughters[W_to_MuNu].size() == 2 || daughters[W_to_ElNu].size() == 2) && daughters[H_to_PhiGamma].size() == 2) {
+        // Output from MELA
+        MagicAngles mAngles;
+        // Variables for MELA
+        TLorentzVector lep_p4(lepton_p4.Px(),lepton_p4.Py(),lepton_p4.Pz(),lepton_p4.E());
+        TLorentzVector mes_p4(phi_p4.Px(),phi_p4.Py(),phi_p4.Pz(),phi_p4.E());
+        TLorentzVector gam_p4(gamma_p4.Px(),gamma_p4.Py(),gamma_p4.Pz(),gamma_p4.E());
+        // Get magic angles
+        mAngles = getAngles(nu_p4.pt(), nu_p4.phi(), genWLepton_id, lep_p4, mes_p4, gam_p4, nu_p4.Pz());
+        // Fill branches
+        genMagAng_cosThetaStar = mAngles.angles[0];
+        genMagAng_cosTheta1 = mAngles.angles[1];
+        genMagAng_cosTheta2 = mAngles.angles[2];
+        genMagAng_Phi = mAngles.angles[3];
+        genMagAng_Phi1 = mAngles.angles[4];
+        genMagAng_m1 = mAngles.angles[5];
+        genMagAng_m2 = mAngles.angles[6];
     }
 
     return;
@@ -714,13 +770,13 @@ void BabyTree::FillRecoBranches() {
     for (unsigned int i = 0; i < els_p4().size(); i++) {
         // Define cuts for readability
         bool elsPtCut = (els_p4().at(i).pt() > 20);
-        bool elsEtaCut = (els_p4().at(i).eta() < 2.4);
-        bool elsIDCut = (electronID(i,id_level_t::HAD_veto_noiso_v5));
+        bool elsEtaCut = (abs(els_p4().at(i).eta()) < 2.4);
+        bool elsIDCut = (electronID(i,id_level_t::HAD_medium_noiso_v5));
         bool elsIsoCut = (elMiniRelIsoCMS3_EA(i, gconf.ea_version) < 0.1);
         // Store 'good' electrons
         if (elsPtCut && elsEtaCut && elsIDCut && elsIsoCut) {
             goodLeptonIdxs.push_back(i);
-            goodLeptonIDs.push_back(11);
+            goodLeptonIDs.push_back(-11*els_charge().at(i));
         }
     } // END Loop over electrons ---------------------------
 
@@ -728,13 +784,13 @@ void BabyTree::FillRecoBranches() {
     for (unsigned int i = 0; i < mus_p4().size(); i++) {
         // Define cuts for readability
         bool musPtCut = (mus_p4().at(i).pt() > 20);
-        bool musEtaCut = (mus_p4().at(i).eta() < 2.4);
+        bool musEtaCut = (abs(mus_p4().at(i).eta()) < 2.4);
         bool musIDCut = (isMediumMuonPOG(i));
         bool musIsoCut = (muMiniRelIsoCMS3_EA(i, gconf.ea_version) < 0.2);
         // Store 'good' muons
         if (musPtCut && musEtaCut && musIDCut && musIsoCut) {
             goodLeptonIdxs.push_back(i); 
-            goodLeptonIDs.push_back(13); 
+            goodLeptonIDs.push_back(-13*mus_charge().at(i)); 
         }
     } // END Loop over muons -------------------------------
 
@@ -743,9 +799,9 @@ void BabyTree::FillRecoBranches() {
     for (unsigned int i = 0; i < goodLeptonIdxs.size(); i++) {
         int tl = goodLeptonIdxs.at(i);
         int bl = goodLeptonIdxs.at(bestLepton);
-        LorentzVector thisLepton_p4 = (goodLeptonIDs.at(i) == 11) ? els_p4().at(tl) : mus_p4().at(tl);
+        LorentzVector thisLepton_p4 = (abs(goodLeptonIDs.at(i)) == 11) ? els_p4().at(tl) : mus_p4().at(tl);
         float thisLepton_pt = thisLepton_p4.pt();
-        LorentzVector bestLepton_p4 = (goodLeptonIDs.at(bestLepton) == 11) ? els_p4().at(bl) : mus_p4().at(bl);
+        LorentzVector bestLepton_p4 = (abs(goodLeptonIDs.at(bestLepton)) == 11) ? els_p4().at(bl) : mus_p4().at(bl);
         float bestLepton_pt = bestLepton_p4.pt();
         if (thisLepton_pt > bestLepton_pt) {
             bestLepton = i;
@@ -783,7 +839,7 @@ void BabyTree::FillRecoBranches() {
         recoWLepton_id = goodLeptonIDs.at(bestLepton);
         int bestLep_i = goodLeptonIdxs.at(bestLepton);
         // Best lepton kinematics
-        bestLepton_p4 = (recoWLepton_id == 11) ? els_p4().at(bestLep_i) : mus_p4().at(bestLep_i);
+        bestLepton_p4 = (abs(recoWLepton_id) == 11) ? els_p4().at(bestLep_i) : mus_p4().at(bestLep_i);
         recoWLepton_pt = bestLepton_p4.pt(); 
         recoWLepton_eta = bestLepton_p4.eta(); 
         recoWLepton_phi = bestLepton_p4.phi(); 
