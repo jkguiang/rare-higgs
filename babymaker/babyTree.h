@@ -138,6 +138,7 @@ class BabyTree {
     TBranch* b_recoWLepton_eta;
     TBranch* b_recoWLepton_phi;
     TBranch* b_recoWLepton_nLep;
+    TBranch* b_recoWLepton_nLepVeto;
     TBranch* b_recoGammaWLepton_dR;
 
     public:
@@ -281,6 +282,7 @@ class BabyTree {
         float recoWLepton_eta;
         float recoWLepton_phi;
         int recoWLepton_nLep;
+        int recoWLepton_nLepVeto;
 
         /* --> Methods <-- */
         // Constructor
@@ -292,11 +294,11 @@ class BabyTree {
         // Fill config struct
         void MakeConfig(TString);
         // Fill gen-level branches
-        void FillGenBranches();
+        int FillGenBranches();
         // Fill reco branches
-        void FillRecoBranches();
+        int FillRecoBranches();
         // Fill gen-reco branches
-        void FillGenRecoBranches();
+        int FillGenRecoBranches();
 };
 
 #endif

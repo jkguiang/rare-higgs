@@ -112,13 +112,19 @@ int ScanChain(TChain* chain, TString outName, TString sampleName, bool verbose=f
             }
             else bbt->scale1fb = 1.0;
             // Fill gen branches
-            if (isSignal) bbt->FillGenBranches();
+            int success_gen = 0;
+            if (isSignal) { 
+                success_gen = bbt->FillGenBranches(); 
+            }
             // Fill reco branches
-            bbt->FillRecoBranches();
+            int success_reco = bbt->FillRecoBranches();
             // Fill gen-reco dR branches
-            bbt->FillGenRecoBranches();
+            int success_genReco = 0;
+            if (isSignal) { 
+                success_genReco = bbt->FillGenRecoBranches(); 
+            }
             // Fill tree
-            bbtree->Fill();
+            if (success_gen == 0 && success_reco == 0 && success_genReco == 0) bbtree->Fill();
 
             /* --> END Analysis Code <-- */
         }

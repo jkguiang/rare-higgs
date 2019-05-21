@@ -169,6 +169,7 @@ BabyTree::BabyTree() {
     b_recoWLepton_eta = t->Branch("recoWLepton_eta", &recoWLepton_eta, "recoWLepton_eta/F");
     b_recoWLepton_phi = t->Branch("recoWLepton_phi", &recoWLepton_phi, "recoWLepton_phi/F");
     b_recoWLepton_nLep = t->Branch("recoWLepton_nLep", &recoWLepton_nLep, "recoWLepton_nLep/I");
+    b_recoWLepton_nLepVeto = t->Branch("recoWLepton_nLepVeto", &recoWLepton_nLepVeto, "recoWLepton_nLepVeto/I");
     b_recoGammaWLepton_dR = t->Branch("recoGammaWLepton_dR", &recoGammaWLepton_dR, "recoGammaWLepton_dR/F");
 }
 
@@ -283,6 +284,7 @@ void BabyTree::Reset() {
     recoWLepton_eta = -999;
     recoWLepton_phi = -999;
     recoWLepton_nLep = -999;
+    recoWLepton_nLepVeto = -999;
 
     return;
 }
@@ -377,9 +379,9 @@ float BabyTree::dR(float phi1, float phi2, float eta1, float eta2) {
 /**
  * Fill relevant branches with gen-level information
  * @params: none
- * @return: none
+ * @return: 0 (success), 1 (fail)
  */
-void BabyTree::FillGenBranches() {
+int BabyTree::FillGenBranches() {
 
     /* --> Find and save relevant decay modes <-- */
 
@@ -414,18 +416,12 @@ void BabyTree::FillGenBranches() {
         }
         // Add particle id, idx, p4 to relevant systems
         if (abs(thisMotherID) == 24) {
-            if (abs(thisID) == 11) {
+            if (abs(thisID) == 11 || abs(thisID) == 12) {
                 mothers[W_to_ElNu] = thisMotherIdx;
                 daughters[W_to_ElNu].push_back(i);
             }
-            if (abs(thisID) == 13) {
+            if (abs(thisID) == 13 || abs(thisID) == 14) {
                 mothers[W_to_MuNu] = thisMotherIdx;
-                daughters[W_to_MuNu].push_back(i);
-            }
-            if (abs(thisID) == 12) {
-                daughters[W_to_ElNu].push_back(i);
-            }
-            if (abs(thisID) == 14) {
                 daughters[W_to_MuNu].push_back(i);
             }
         }
@@ -454,15 +450,11 @@ void BabyTree::FillGenBranches() {
         }
     } // END Loop over gen-level data ------------
 
-    // General variables used for filling tree and code readability
-    LorentzVector p4_sum;
-    int decay;
-
     /* --> Fill W --> el/mu, nu <-- */
     LorentzVector lepton_p4, nu_p4;
     if (daughters[W_to_MuNu].size() == 2 || daughters[W_to_ElNu].size() == 2) {
-        decay = (daughters[W_to_MuNu].size() == 1) ? W_to_MuNu : W_to_ElNu;
-        p4_sum -= p4_sum; // Reset p4 sum
+        int decay = (daughters[W_to_MuNu].size() == 2) ? W_to_MuNu : W_to_ElNu;
+        LorentzVector mother_p4 = genps_p4().at(mothers[decay]);
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
             // Get daughter
             int idx = daughters[decay].at(j);
@@ -475,21 +467,21 @@ void BabyTree::FillGenBranches() {
                 genWLepton_pt = p4.pt();
                 genWLepton_eta = p4.eta();
                 genWLepton_phi = p4.phi();
-                p4_sum += p4;
             }
             else {
                 // Save neutrino kinematics for magic angles calculation
                 nu_p4 = p4;
             }
         }
-        genW_mass = p4_sum.M();
+        // Fill W boson branches
+        genW_mass = mother_p4.M();
     }
 
     /* --> Fill H --> phi/rho, gamma <-- */
-    LorentzVector gamma_p4;
+    LorentzVector gamma_p4, meson_p4;
     if (daughters[H_to_PhiGamma].size() == 2 || daughters[H_to_RhoGamma].size() == 2) {
-        decay = (daughters[H_to_PhiGamma].size() == 2) ? H_to_PhiGamma : H_to_RhoGamma;
-        p4_sum -= p4_sum; // Reset p4 sum
+        int decay = (daughters[H_to_PhiGamma].size() == 2) ? H_to_PhiGamma : H_to_RhoGamma;
+        LorentzVector mother_p4 = genps_p4().at(mothers[decay]);
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
             // Get daughter
             int idx = daughters[decay].at(j);
@@ -501,7 +493,6 @@ void BabyTree::FillGenBranches() {
                 genGamma_pt = p4.pt();
                 genGamma_eta = p4.eta();
                 genGamma_phi = p4.phi();
-                p4_sum += p4;
             }
             else {
                 // Fill mesons from Higgs branches
@@ -509,18 +500,18 @@ void BabyTree::FillGenBranches() {
                 genHiggsMeson_pt = p4.pt();
                 genHiggsMeson_eta = p4.eta();
                 genHiggsMeson_phi = p4.phi();
-                p4_sum += p4;
+                meson_p4 = p4;
             }
         }
+        // Fill Higgs branches
         genHiggsMesonGamma_dR = dR(genHiggsMeson_phi, genGamma_phi, genHiggsMeson_eta, genGamma_eta);
-        genHiggs_mass = p4_sum.M();
+        genHiggs_mass = mother_p4.M();
     }
 
     /* --> Fill phi --> K+, K- <-- */
-    LorentzVector phi_p4;
     if (daughters[Phi_to_KK].size() == 2) {
-        decay = Phi_to_KK;
-        p4_sum -= p4_sum; // Reset p4 sum
+        int decay = Phi_to_KK;
+        LorentzVector mother_p4 = genps_p4().at(mothers[decay]);
         for (unsigned int j = 0; j < daughters[decay].size(); j++) {
             // Get daughter
             int idx = daughters[decay].at(j);
@@ -531,28 +522,27 @@ void BabyTree::FillGenBranches() {
                 genKp_pt = p4.pt();
                 genKp_phi = p4.phi();
                 genKp_eta = p4.eta();
-                p4_sum += p4;
             }
             else if (id == -321) {
                 genKm_pt = p4.pt();
                 genKm_phi = p4.phi();
                 genKm_eta = p4.eta();
-                p4_sum += p4;
             }
         }
         genKpKm_dR = dR(genKp_phi, genKm_phi, genKp_eta, genKm_eta);
-        phi_p4 = p4_sum;
-        genHiggsMeson_mass = phi_p4.M();
+        genHiggsMeson_mass = mother_p4.M();
     }
 
     /* --> Fill Magic Angles <-- */
-    if ((daughters[W_to_MuNu].size() == 2 || daughters[W_to_ElNu].size() == 2) && daughters[H_to_PhiGamma].size() == 2) {
+    bool foundWSystem = (daughters[W_to_MuNu].size() == 2 || daughters[W_to_ElNu].size() == 2);
+    bool foundHSystem = (daughters[H_to_PhiGamma].size() == 2 || daughters[H_to_RhoGamma].size() == 2);
+    if (foundWSystem && foundHSystem) {
         // Output from MELA
         MagicAngles mAngles;
         // Variables for MELA
-        TLorentzVector lep_p4(lepton_p4.Px(),lepton_p4.Py(),lepton_p4.Pz(),lepton_p4.E());
-        TLorentzVector mes_p4(phi_p4.Px(),phi_p4.Py(),phi_p4.Pz(),phi_p4.E());
-        TLorentzVector gam_p4(gamma_p4.Px(),gamma_p4.Py(),gamma_p4.Pz(),gamma_p4.E());
+        TLorentzVector lep_p4(lepton_p4.Px(), lepton_p4.Py(), lepton_p4.Pz(), lepton_p4.E());
+        TLorentzVector mes_p4(meson_p4.Px(), meson_p4.Py(), meson_p4.Pz(), meson_p4.E());
+        TLorentzVector gam_p4(gamma_p4.Px(), gamma_p4.Py(), gamma_p4.Pz(), gamma_p4.E());
         // Get magic angles
         mAngles = getAngles(nu_p4.pt(), nu_p4.phi(), genWLepton_id, lep_p4, mes_p4, gam_p4, nu_p4.Pz());
         // Fill branches
@@ -565,15 +555,15 @@ void BabyTree::FillGenBranches() {
         genMagAng_m2 = mAngles.angles[6];
     }
 
-    return;
+    return 0;
 }
 
 /**
  * Fill relevant branches with reco information
  * @params: none
- * @return: none
+ * @return: 0 (success), 1 (fail)
  */
-void BabyTree::FillRecoBranches() {
+int BabyTree::FillRecoBranches() {
 
     /* --> Fill MET <-- */
     // Uncorrected
@@ -583,6 +573,156 @@ void BabyTree::FillRecoBranches() {
     pair<float, float> t1met = getT1CHSMET_fromMINIAOD(config.jetCorr, 0, 0, false, 0);
     met_pt = t1met.first;
     met_phi = t1met.second;
+
+    /* --> Photons <-- */
+    vector<int> goodPhotons;
+    // START Loop over photons -----------------------------
+    for (unsigned int i = 0; i < photons_p4().size(); i++) {
+        LorentzVector photon_p4 = photons_p4().at(i);
+        float photon_pt = photon_p4.pt();
+        // Define cuts for readability
+        bool photonPtCut = (photon_pt > 20);
+        bool photonEtaCut = (abs(photon_p4.eta()) < 2.5);
+        bool photonTightIDCut = isMediumPhotonPOG_Fall17V2(i);
+        bool photonIsoCut = (photons_recoChargedHadronIso().at(i)/photon_pt < 0.06);
+        // Store 'good' photons
+        if (photonPtCut && photonEtaCut && photonTightIDCut && photonIsoCut) {
+            // Check for overlap
+            bool isOverlap = false;
+            for (unsigned int j = 0; j < els_p4().size(); j++) {
+                if (els_p4().at(j).pt() > 10) {
+                    LorentzVector el_p4 = els_p4().at(j);
+                    isOverlap = dR(photon_p4.phi(), el_p4.phi(), photon_p4.eta(), el_p4.eta()) < 0.2;
+                    if (isOverlap) break;
+                }
+            }
+            if (!isOverlap) goodPhotons.push_back(i);
+        }
+    } // END Loop over photons -----------------------------
+
+    // Find best (highest Pt) photon
+    int bestPhoton = 0;
+    for (unsigned int i = 0; i < goodPhotons.size(); i++) {
+        float thisPhoton_pt = photons_p4().at(goodPhotons.at(i)).pt();
+        float bestPhoton_pt = photons_p4().at(goodPhotons.at(bestPhoton)).pt();
+        if (thisPhoton_pt > bestPhoton_pt) {
+            bestPhoton = i;
+        }
+    }
+
+    // Find best gen photon match
+    int bestMatch = -1;
+    float minPhotonParton_dR = 999.; 
+    if (!evt_isRealData() && goodPhotons.size() > 0) {
+        float bestMatch_dR = 0.1;
+        float bestMatch_eta = 999;
+        float bestMatch_phi = 999;
+        for (unsigned int i = 0; i < genps_p4().size(); i++) {
+            LorentzVector thisPhoton_p4 = genps_p4().at(i);
+            float thisPhoton_pt = thisPhoton_p4.pt();
+            float thisPhoton_eta = thisPhoton_p4.eta();
+            float thisPhoton_phi = thisPhoton_p4.phi();
+            LorentzVector recoPhoton_p4 = photons_p4().at(goodPhotons.at(bestPhoton));
+            float recoPhoton_pt = recoPhoton_p4.pt();
+            float recoPhoton_eta = recoPhoton_p4.eta();
+            float recoPhoton_phi = recoPhoton_p4.phi();
+            // Only consider final-state photons
+            if (genps_id().at(i) != 22) continue;
+            if (genps_status().at(i) != 1) continue; 
+            if (fabs(genps_id_simplemother().at(i)) > 22  && genps_id_simplemother().at(i) != 2212) continue; // pions etc // but keep photons from the leading proton
+            // Pre-dR cut (saves on computation time)
+            if (fabs(recoPhoton_eta - thisPhoton_eta) > 0.1) continue;
+            // Pt cut
+            if (recoPhoton_pt > 2*thisPhoton_pt || recoPhoton_pt < 0.5*thisPhoton_pt) continue;
+            // Get/compare dR
+            float thisMatch_dR = dR(thisPhoton_eta, recoPhoton_eta, thisPhoton_phi, recoPhoton_phi);
+            if (thisMatch_dR < bestMatch_dR) {
+                bestMatch = i;
+                bestMatch_dR = thisMatch_dR;
+                bestMatch_eta = thisPhoton_eta;
+                bestMatch_phi = thisPhoton_phi;
+            }
+            // Find closest parton
+            if (bestMatch != -1) {
+                for(unsigned int i = 0; i < genps_p4().size(); i++){
+                    if (genps_status().at(i) != 22 && genps_status().at(i) != 23) continue;
+                    if (fabs(genps_id().at(i)) > 21) continue;
+                    LorentzVector thisParton_p4 = genps_p4().at(i);
+                    float thisParton_eta = thisParton_p4.eta();
+                    float thisParton_phi = thisParton_p4.phi();
+                    float thisPartonPhoton_dR = dR(thisParton_eta, bestMatch_eta, thisParton_phi, bestMatch_phi);
+                    if (thisPartonPhoton_dR < minPhotonParton_dR) {
+                        minPhotonParton_dR = thisPartonPhoton_dR;
+                    }
+                }
+            }
+        }
+    }
+
+    /* --> Leptons <-- */
+    vector<int> goodLeptonIdxs;
+    vector<int> goodLeptonIDs;
+    recoWLepton_nLepVeto = 0;
+    // START Loop over electrons ---------------------------
+    for (unsigned int i = 0; i < els_p4().size(); i++) {
+        // Define cuts for readability
+        bool elsPtCut = (els_p4().at(i).pt() > 20);
+        bool elsEtaCut = (abs(els_p4().at(i).eta()) < 2.4);
+        bool elsIDCut = (electronID(i,id_level_t::HAD_medium_noiso_v5));
+        bool elsIsoCut = (elMiniRelIsoCMS3_EA(i, gconf.ea_version) < 0.1);
+        // Store 'good' electrons
+        if (elsPtCut && elsEtaCut && elsIDCut && elsIsoCut) {
+            goodLeptonIdxs.push_back(i);
+            goodLeptonIDs.push_back(-11*els_charge().at(i));
+        }
+        // Define looser cuts
+        bool elsVetoPtCut = (els_p4().at(i).pt() > 10);
+        bool elsVetoIDCut = (electronID(i,id_level_t::HAD_veto_noiso_v5));
+        // Fill nLepVeto branch
+        if (elsVetoPtCut && elsEtaCut && elsVetoIDCut && elsIsoCut) {
+            recoWLepton_nLepVeto++;
+        }
+    } // END Loop over electrons ---------------------------
+
+    // START Loop over muons -------------------------------
+    for (unsigned int i = 0; i < mus_p4().size(); i++) {
+        // Define cuts for readability
+        bool musPtCut = (mus_p4().at(i).pt() > 20);
+        bool musEtaCut = (abs(mus_p4().at(i).eta()) < 2.4);
+        bool musIDCut = (isMediumMuonPOG(i));
+        bool musIsoCut = (muMiniRelIsoCMS3_EA(i, gconf.ea_version) < 0.2);
+        // Store 'good' muons
+        if (musPtCut && musEtaCut && musIDCut && musIsoCut) {
+            goodLeptonIdxs.push_back(i); 
+            goodLeptonIDs.push_back(-13*mus_charge().at(i)); 
+        }
+        // Define looser cuts
+        bool musVetoPtCut = (mus_p4().at(i).pt() > 10);
+        bool musVetoIDCut = (isLooseMuonPOG(i));
+        // Fill nLepVeto branch
+        if (musVetoPtCut && musEtaCut && musVetoIDCut && musIsoCut) {
+            recoWLepton_nLepVeto++;
+        }
+    } // END Loop over muons -------------------------------
+
+    // Fill nLep branch
+    recoWLepton_nLep = goodLeptonIdxs.size();
+    // Find best (highest Pt) lepton, should usually only be one to choose from
+    int bestLepton = 0;
+    for (unsigned int i = 0; i < goodLeptonIdxs.size(); i++) {
+        int tl = goodLeptonIdxs.at(i);
+        int bl = goodLeptonIdxs.at(bestLepton);
+        LorentzVector thisLepton_p4 = (abs(goodLeptonIDs.at(i)) == 11) ? els_p4().at(tl) : mus_p4().at(tl);
+        float thisLepton_pt = thisLepton_p4.pt();
+        LorentzVector bestLepton_p4 = (abs(goodLeptonIDs.at(bestLepton)) == 11) ? els_p4().at(bl) : mus_p4().at(bl);
+        float bestLepton_pt = bestLepton_p4.pt();
+        if (thisLepton_pt > bestLepton_pt) {
+            bestLepton = i;
+        }
+    }
+
+    // Skip event if no good photons or leptons found
+    if (recoWLepton_nLep != 1 || recoWLepton_nLepVeto != 1 || goodPhotons.size() < 1) return 1;
 
     /* --> Mesons, Hadrons <-- */
     // Store K+, K- indexes
@@ -678,136 +818,6 @@ void BabyTree::FillRecoBranches() {
         } // END Loop over meson cands from Pi -------------
     }
 
-    /* --> Photons <-- */
-    vector<int> goodPhotons;
-    // START Loop over photons -----------------------------
-    for (unsigned int i = 0; i < photons_p4().size(); i++) {
-        LorentzVector photon_p4 = photons_p4().at(i);
-        float photon_pt = photon_p4.pt();
-        // Define cuts for readability
-        bool photonPtCut = (photon_pt > 20);
-        bool photonEtaCut = (abs(photon_p4.eta()) < 2.5);
-        bool photonTightIDCut = isMediumPhotonPOG_Fall17V2(i);
-        bool photonIsoCut = (photons_recoChargedHadronIso().at(i)/photon_pt < 0.06);
-        // Store 'good' photons
-        if (photonPtCut && photonEtaCut && photonTightIDCut && photonIsoCut) {
-            // Check for overlap
-            bool isOverlap = false;
-            for (unsigned int j = 0; j < els_p4().size(); j++) {
-                if (els_p4().at(j).pt() > 10) {
-                    LorentzVector el_p4 = els_p4().at(j);
-                    isOverlap = dR(photon_p4.phi(), el_p4.phi(), photon_p4.eta(), el_p4.eta()) < 0.2;
-                    if (isOverlap) break;
-                }
-            }
-            if (!isOverlap) goodPhotons.push_back(i);
-        }
-    } // END Loop over photons -----------------------------
-
-    // Find best (highest Pt) photon
-    int bestPhoton = 0;
-    for (unsigned int i = 0; i < goodPhotons.size(); i++) {
-        float thisPhoton_pt = photons_p4().at(goodPhotons.at(i)).pt();
-        float bestPhoton_pt = photons_p4().at(goodPhotons.at(bestPhoton)).pt();
-        if (thisPhoton_pt > bestPhoton_pt) {
-            bestPhoton = i;
-        }
-    }
-
-    // Find best gen photon match
-    int bestMatch = -1;
-    float minPhotonParton_dR = 999.; 
-    if (!evt_isRealData() && goodPhotons.size() > 0) {
-        float bestMatch_dR = 0.1;
-        float bestMatch_eta = 999;
-        float bestMatch_phi = 999;
-        for (unsigned int i = 0; i < genps_p4().size(); i++) {
-            LorentzVector thisPhoton_p4 = genps_p4().at(i);
-            float thisPhoton_pt = thisPhoton_p4.pt();
-            float thisPhoton_eta = thisPhoton_p4.eta();
-            float thisPhoton_phi = thisPhoton_p4.phi();
-            LorentzVector recoPhoton_p4 = photons_p4().at(goodPhotons.at(bestPhoton));
-            float recoPhoton_pt = recoPhoton_p4.pt();
-            float recoPhoton_eta = recoPhoton_p4.eta();
-            float recoPhoton_phi = recoPhoton_p4.phi();
-            // Only consider final-state photons
-            if (genps_id().at(i) != 22) continue;
-            if (genps_status().at(i) != 1) continue; 
-            if (fabs(genps_id_simplemother().at(i)) > 22  && genps_id_simplemother().at(i) != 2212) continue; // pions etc // but keep photons from the leading proton
-            // Pre-dR cut (saves on computation time)
-            if (fabs(recoPhoton_eta - thisPhoton_eta) > 0.1) continue;
-            // Pt cut
-            if (recoPhoton_pt > 2*thisPhoton_pt || recoPhoton_pt < 0.5*thisPhoton_pt) continue;
-            // Get/compare dR
-            float thisMatch_dR = dR(thisPhoton_eta, recoPhoton_eta, thisPhoton_phi, recoPhoton_phi);
-            if (thisMatch_dR < bestMatch_dR) {
-                bestMatch = i;
-                bestMatch_dR = thisMatch_dR;
-                bestMatch_eta = thisPhoton_eta;
-                bestMatch_phi = thisPhoton_phi;
-            }
-            // Find closest parton
-            if (bestMatch != -1) {
-                for(unsigned int i = 0; i < genps_p4().size(); i++){
-                    if (genps_status().at(i) != 22 && genps_status().at(i) != 23) continue;
-                    if (fabs(genps_id().at(i)) > 21) continue;
-                    LorentzVector thisParton_p4 = genps_p4().at(i);
-                    float thisParton_eta = thisParton_p4.eta();
-                    float thisParton_phi = thisParton_p4.phi();
-                    float thisPartonPhoton_dR = dR(thisParton_eta, bestMatch_eta, thisParton_phi, bestMatch_phi);
-                    if (thisPartonPhoton_dR < minPhotonParton_dR) {
-                        minPhotonParton_dR = thisPartonPhoton_dR;
-                    }
-                }
-            }
-        }
-    }
-
-    /* --> Leptons <-- */
-    vector<int> goodLeptonIdxs;
-    vector<int> goodLeptonIDs;
-    // START Loop over electrons ---------------------------
-    for (unsigned int i = 0; i < els_p4().size(); i++) {
-        // Define cuts for readability
-        bool elsPtCut = (els_p4().at(i).pt() > 20);
-        bool elsEtaCut = (abs(els_p4().at(i).eta()) < 2.4);
-        bool elsIDCut = (electronID(i,id_level_t::HAD_medium_noiso_v5));
-        bool elsIsoCut = (elMiniRelIsoCMS3_EA(i, gconf.ea_version) < 0.1);
-        // Store 'good' electrons
-        if (elsPtCut && elsEtaCut && elsIDCut && elsIsoCut) {
-            goodLeptonIdxs.push_back(i);
-            goodLeptonIDs.push_back(-11*els_charge().at(i));
-        }
-    } // END Loop over electrons ---------------------------
-
-    // START Loop over muons -------------------------------
-    for (unsigned int i = 0; i < mus_p4().size(); i++) {
-        // Define cuts for readability
-        bool musPtCut = (mus_p4().at(i).pt() > 20);
-        bool musEtaCut = (abs(mus_p4().at(i).eta()) < 2.4);
-        bool musIDCut = (isMediumMuonPOG(i));
-        bool musIsoCut = (muMiniRelIsoCMS3_EA(i, gconf.ea_version) < 0.2);
-        // Store 'good' muons
-        if (musPtCut && musEtaCut && musIDCut && musIsoCut) {
-            goodLeptonIdxs.push_back(i); 
-            goodLeptonIDs.push_back(-13*mus_charge().at(i)); 
-        }
-    } // END Loop over muons -------------------------------
-
-    // Find best (highest Pt) lepton, should usually only be one to choose from
-    int bestLepton = 0;
-    for (unsigned int i = 0; i < goodLeptonIdxs.size(); i++) {
-        int tl = goodLeptonIdxs.at(i);
-        int bl = goodLeptonIdxs.at(bestLepton);
-        LorentzVector thisLepton_p4 = (abs(goodLeptonIDs.at(i)) == 11) ? els_p4().at(tl) : mus_p4().at(tl);
-        float thisLepton_pt = thisLepton_p4.pt();
-        LorentzVector bestLepton_p4 = (abs(goodLeptonIDs.at(bestLepton)) == 11) ? els_p4().at(bl) : mus_p4().at(bl);
-        float bestLepton_pt = bestLepton_p4.pt();
-        if (thisLepton_pt > bestLepton_pt) {
-            bestLepton = i;
-        }
-    }
-
     /* --> Fill Photons <-- */
     LorentzVector bestPhoton_p4; // Declare here, since used in following conditionals
     if (goodPhotons.size() > 0) {
@@ -833,8 +843,6 @@ void BabyTree::FillRecoBranches() {
     /* --> Fill Leptons <-- */
     LorentzVector bestLepton_p4; // Declare here, since used in following conditionals
     if (goodLeptonIdxs.size() > 0) {
-        // Number of 'good' leptons
-        recoWLepton_nLep = goodLeptonIdxs.size();
         // Best lepton
         recoWLepton_id = goodLeptonIDs.at(bestLepton);
         int bestLep_i = goodLeptonIdxs.at(bestLepton);
@@ -950,10 +958,10 @@ void BabyTree::FillRecoBranches() {
 
     /* --> Fill Triggers <-- */
     // Single muon
-    HLT_singleMu = passHLTTriggerPattern("HLT_IsoMu17_eta2p1_v") ||
-                   passHLTTriggerPattern("HLT_IsoMu20_v") || passHLTTriggerPattern("HLT_IsoMu20_eta2p1_v") ||
-                   passHLTTriggerPattern("HLT_IsoTkMu20_v") || passHLTTriggerPattern("HLT_IsoTkMu20_eta2p1_v") ||
-                   passHLTTriggerPattern("HLT_IsoMu24_v") || passHLTTriggerPattern("HLT_IsoTkMu24_v") || passHLTTriggerPattern("HLT_IsoMu24_eta2p1_v") ||
+    HLT_singleMu = passHLTTriggerPattern("HLT_IsoMu17_eta2p1_v") || passHLTTriggerPattern("HLT_IsoMu20_v") ||
+                   passHLTTriggerPattern("HLT_IsoMu20_eta2p1_v") || passHLTTriggerPattern("HLT_IsoTkMu20_v") || 
+                   passHLTTriggerPattern("HLT_IsoTkMu20_eta2p1_v") || passHLTTriggerPattern("HLT_IsoMu24_v") || 
+                   passHLTTriggerPattern("HLT_IsoTkMu24_v") || passHLTTriggerPattern("HLT_IsoMu24_eta2p1_v") ||
                    passHLTTriggerPattern("HLT_IsoMu27_v") || passHLTTriggerPattern("HLT_IsoTkMu27_v");
     // Single electron
     HLT_singleEl = passHLTTriggerPattern("HLT_Ele27_eta2p1_WPTight_Gsf_v") || // 2016
@@ -966,8 +974,8 @@ void BabyTree::FillRecoBranches() {
 
     /* --> Fill Filters <-- */
     // Define variable flags
-    bool Flag_ecalBadCalib = (config.year == 2016) ? true : filt_ecalBadCalibFilterUpdate(); // 2017, 2018
     bool Flag_eeBadSc = (config.isData) ? filt_eeBadSc() : true; // Data only
+    bool Flag_ecalBadCalib = (config.year == 2016) ? true : filt_ecalBadCalibFilterUpdate(); // 2017, 2018
     // Check flags
     passFilters = filt_goodVertices() && filt_globalSuperTightHalo2016() && filt_hbheNoise() && 
                   filt_hbheNoiseIso() && filt_ecalTP() && filt_BadPFMuonFilter() &&
@@ -977,21 +985,25 @@ void BabyTree::FillRecoBranches() {
     isHEM = 0;
     if (config.year == 2018) {
         if ((config.isData && run >= 319077) || (!config.isData && event % 1961 < 1286)) {
+            // Photons
             bool photon_inRegion = (goodPhotons.size() > 0 && (recoGamma_eta >= -4.7 && recoGamma_eta <= -1.4) && (recoGamma_phi >= -1.6 && recoGamma_phi <= -0.8));
-            bool electron_inRegion = (abs(recoWLepton_id) == abs(11) && (recoWLepton_eta >= -4.7 && recoWLepton_eta <= -1.4) && (recoWLepton_phi >= -1.6 && recoWLepton_phi <= -0.8));
+            // Electrons
+            bool lepton_inEtaRegion = (recoWLepton_eta >= -4.7 && recoWLepton_eta <= -1.4);
+            bool lepton_inPhiRegion = (recoWLepton_phi >= -1.6 && recoWLepton_phi <= -0.8);
+            bool electron_inRegion = (abs(recoWLepton_id) == abs(11) && lepton_inEtaRegion && lepton_inPhiRegion);
             if (photon_inRegion || electron_inRegion) isHEM = 1;
         }
     }
 
-    return;
+    return 0;
 }
 
 /**
  * Fill relevant branches with gen-reco information
  * @params: none
- * @return: none
+ * @return: 0 (success), 1 (fail)
  */
-void BabyTree::FillGenRecoBranches() {
+int BabyTree::FillGenRecoBranches() {
     
     if (genGamma_pt != -999 && recoGamma_pt != -999) {
         genRecoGamma_dR = dR(genGamma_phi, recoGamma_phi, genGamma_eta, recoGamma_eta);
@@ -1003,5 +1015,5 @@ void BabyTree::FillGenRecoBranches() {
     //     genRecoHiggsRho_dR = dR(genHiggsMeson_phi, recoHiggsMeson_phi, genHiggsMeson_eta, recoHiggsMeson_eta);
     // }
 
-    return;
+    return 0;
 }
