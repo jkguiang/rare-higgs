@@ -473,20 +473,19 @@ MagicAngles getAngles(float met_pt, float met_phi, int lep_id, TLorentzVector le
     float lep_px = lep_p4.Px();
     float lep_py = lep_p4.Py();
     float lep_pz = lep_p4.Pz();
-    float E_l = pow(pow(lep_px, 2)+pow(lep_py, 2)+pow(lep_pz, 2), 0.5); // m_l ~ 0
+    float lep_E = pow(pow(lep_px, 2)+pow(lep_py, 2)+pow(lep_pz, 2), 0.5); // m_l ~ 0
     // Mass of W-boson
     float m = 80.379;
     // Solve for nu_pz if not provided
     if (nu_pz < -998) {
         // Terms of quadratic equation solutions for nu_pz
-        float a = ( pow(E_l,2) - pow(lep_pz,2) );
+        float a = ( pow(lep_E,2) - pow(lep_pz,2) );
         float b = ( -lep_pz*pow(m,2) - 2*lep_px*lep_pz*nu_px - 2*lep_py*lep_pz*nu_py );
-        float c = ( pow(E_l,2)*pow(nu_py,2) - pow(lep_py,2)*pow(nu_py,2) - pow(m,2)*lep_py*nu_py + pow(E_l,2)*pow(nu_px,2) 
+        float c = ( pow(lep_E,2)*pow(nu_py,2) - pow(lep_py,2)*pow(nu_py,2) - pow(m,2)*lep_py*nu_py + pow(lep_E,2)*pow(nu_px,2) 
                     - pow(lep_px,2)*pow(nu_px,2) - pow(m,2)*lep_px*nu_px -2*lep_px*lep_py*nu_px*nu_py - pow(m,4)/4 );
         float disc = ( pow(b, 2) - 4*a*c );
         if (disc < 0) disc = 0.0;
         // Determine nu_pz
-        float nu_pz = 0.0;
         float quad_p = (-b+pow(disc, 0.5))/(2*a);
         float quad_m = (-b-pow(disc, 0.5))/(2*a);
         nu_pz = (abs(quad_p) < abs(quad_m)) ? quad_p : quad_m;
@@ -500,7 +499,7 @@ MagicAngles getAngles(float met_pt, float met_phi, int lep_id, TLorentzVector le
     float m1 = -999;
     float m2 = -999;
     // MELA input params
-    TLorentzVector nu_p4(nu_px, nu_py, nu_pz, pow(pow(nu_px, 2)+pow(nu_py, 2)+pow(nu_pz, 2), 0.5)); // m_v ~ 0
+    TLorentzVector nu_p4(nu_px, nu_py, nu_pz, pow(pow(nu_px, 2)+pow(nu_py, 2)+pow(nu_pz, 2), 0.5)); // mass(nu) ~ 0
     TLorentzVector dummy_p4(0,0,0,0);
     TLorentzVector jet1 = (lep_id > 0) ? lep_p4 : nu_p4;
     int jet1Id = (lep_id > 0) ? lep_id : -lep_id+1;
