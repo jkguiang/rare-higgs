@@ -21,3 +21,9 @@ https://github.com/jkguiang/rare-higgs/commit/8a08330215eb7a46429f0b9bbce926575a
 nLepVeto, gen-level magic angles
 ### Latest Commit:
 https://github.com/jkguiang/rare-higgs/commit/5cf1521509d191a2996c3d067484b33b6b40f4fc
+
+## Version 4.0.1
+### Description:
+Rejects hadron pairs that are not fro the same vertex
+### Latest Commit:
+https://github.com/jkguiang/rare-higgs/commit/928a832bf32ddd002c754094c06758403a95015f
