@@ -750,9 +750,14 @@ int BabyTree::FillRecoBranches() {
         // START Loop over neg hadrons ---------------------
         for (unsigned int j = 0; j < negHadronIdxs.size(); j++) {
             int negHadron_i = negHadronIdxs.at(j);
-            float negHadron_pt = pfcands_p4()[negHadron_i].pt();
             // Only consider high-pt neg hadrons
+            float negHadron_pt = pfcands_p4()[negHadron_i].pt();
             if (negHadron_pt < 10) continue;
+            // Only consider hadron pairs from the same vertex
+            if (abs(pfcands_dz().at(posHadron_i)) > 0.1) continue; // dz checks
+            if (abs(pfcands_dz().at(negHadron_i)) > 0.1) continue;
+            if (pfcands_fromPV().at(posHadron_i) < 1) continue; // primary vertex checks
+            if (pfcands_fromPV().at(negHadron_i) < 1) continue;
             // Get Kaon pair p4
             LorentzVector posHadron_p4 = pfcands_p4()[posHadron_i];
             LorentzVector negHadron_p4 = pfcands_p4()[negHadron_i];
@@ -766,10 +771,8 @@ int BabyTree::FillRecoBranches() {
             // Get hadron isolation
             float posHadron_iso = pfcands_trackIso().at(posHadron_i);
             float negHadron_iso = pfcands_trackIso().at(negHadron_i);
-            bool posHadron_dzCheck = (pfcands_dz().at(posHadron_i) >= 0 && pfcands_dz().at(posHadron_i) < 0.1);
-            bool negHadron_dzCheck = (pfcands_dz().at(negHadron_i) >= 0 && pfcands_dz().at(negHadron_i) < 0.1);
-            posHadron_iso = (negHadron_dzCheck || pfcands_fromPV().at(negHadron_i) > 1) ? posHadron_iso - negHadron_p4.pt() : posHadron_iso;
-            negHadron_iso = (posHadron_dzCheck || pfcands_fromPV().at(posHadron_i) > 1) ? negHadron_iso - posHadron_p4.pt() : negHadron_iso;
+            posHadron_iso = posHadron_iso - negHadron_pt;
+            negHadron_iso = negHadron_iso - posHadron_pt;
             // Get meson candidate isolation
             float meson_iso = max(posHadron_iso, negHadron_iso);
             float meson_pt = (posHadron_p4+negHadron_p4).pt();
