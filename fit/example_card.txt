@@ -1,0 +1,23 @@
+imax 1 number of bins
+jmax 1 number of processes minus 1
+kmax * number of nuisance parameters
+---------------------------------------------------------------------------
+shapes sig       bin1    example_workspace.root w:sig_pdf
+shapes bkg       bin1    example_workspace.root w:bkg_exp
+shapes data_obs  bin1    example_workspace.root w:data_obs
+---------------------------------------------------------------------------
+bin            bin1
+observation    -1.0
+---------------------------------------------------------------------------
+bin           bin1   bin1
+process       sig    bkg
+process       0      1
+rate          1.0   1.0
+---------------------------------------------------------------------------
+lumi     lnN  1.03   -
+sig_acc     lnN  1.20   -
+#bkg_norm lnU  -      3.00
+#bkg_exp_norm flatParam
+x_scale flatParam
+sig_width param 2.0 0.1
+sig_mean param 125 0.5
